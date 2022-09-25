@@ -4,7 +4,6 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform/discord"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -40,7 +39,6 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 			GitHub:  "https://github.com/ActuallyGiggles/markov-generator",
 		},
 	}
-	fmt.Fprintf(w, "Welcome to the HomePage!")
 	json.NewEncoder(w).Encode(welcome)
 }
 
