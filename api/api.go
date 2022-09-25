@@ -4,6 +4,7 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform/discord"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -128,6 +129,7 @@ func HandleRequests() {
 	mux.HandleFunc("/getsentence", getSentencePage)
 
 	handler := cors.Default().Handler(mux)
+	fmt.Println("API started")
 	log.Fatal(http.ListenAndServe(":10000", handler))
 }
 

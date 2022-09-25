@@ -1,23 +1,20 @@
-package main
+package handler
 
 import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // prepareMessage prepares the message to be inputted into a Markov chain
 func prepareMessage(msg platform.Message) (processed string, passed bool) {
-
 	processed = lowercaseIfNotEmote(msg.ChannelName, msg.Content)
-
-	processed = removeWeirdTwitchCharactersAndTrim(msg.Content)
-
-	if !checkForMessageQuality(msg.AuthorName, msg.Content) {
+	processed = removeWeirdTwitchCharactersAndTrim(processed)
+	if !checkForMessageQuality(msg.AuthorName, processed) {
 		return "", false
 	}
-
 	return processed, true
 }
 
@@ -103,7 +100,7 @@ func checkForRepitition(message string) bool {
 		}
 	}
 	for _, number := range counts {
-		if number >= 3 {
+		if number > 2 {
 			return true
 		}
 	}
@@ -133,4 +130,62 @@ func checkForMessageQuality(username string, message string) bool {
 	}
 
 	return true
+}
+
+func lockChannel(timer int, channel string) bool {
+	channelLockMx.Lock()
+	if channelLock[channel] {
+		channelLockMx.Unlock()
+		return false
+	}
+	channelLock[channel] = true
+	channelLockMx.Unlock()
+	go unlockChannel(timer, channel)
+	return true
+}
+
+func unlockChannel(timer int, channel string) {
+	time.Sleep(time.Duration(timer) * time.Second)
+	channelLockMx.Lock()
+	channelLock[channel] = false
+	channelLockMx.Unlock()
+}
+
+func randomlyPickLongerSentences(sentence string) bool {
+	// Split sentence into words
+	s := strings.Split(sentence, " ")
+
+	// If s does not exceed 1 word, give 25% chance of making it through
+	if !DoesSliceContainIndex(s, 1) {
+		n := global.RandomNumber(0, 100)
+		if n <= 50 {
+			return false
+		}
+	}
+
+	// If s does not exceed 2 words, give 50% chance of making it through
+	if !DoesSliceContainIndex(s, 2) {
+		n := global.RandomNumber(0, 100)
+		if n <= 50 {
+			return false
+		}
+	}
+
+	// If s does not exceed 3 words, give 75% chance of making it through
+	if !DoesSliceContainIndex(s, 3) {
+		n := global.RandomNumber(0, 100)
+		if n <= 75 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func DoesSliceContainIndex(slice []string, index int) bool {
+	if len(slice) > index {
+		return true
+	} else {
+		return false
+	}
 }

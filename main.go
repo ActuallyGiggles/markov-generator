@@ -2,17 +2,17 @@ package main
 
 import (
 	"MarkovGenerator/api"
-	"MarkovGenerator/commands"
 	"MarkovGenerator/global"
+	"MarkovGenerator/handler"
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"MarkovGenerator/platform/twitter"
+
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/ActuallyGiggles/go-markov"
 )
@@ -22,7 +22,7 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
 	global.Start()
-	fmt.Println("Global Started")
+	fmt.Println("Global started")
 
 	i := markov.StartInstructions{
 		Workers:       10,
@@ -32,59 +32,26 @@ func main() {
 		EndKey:        "e1$D(n7",
 	}
 	markov.Start(i)
-	go outputTicker()
-	fmt.Println("Markov Started")
+	fmt.Println("Markov started")
 
-	go twitter.Start()
-	fmt.Println("Twitter Started")
-
-	go api.HandleRequests()
-	fmt.Println("API Started")
-
-	c := make(chan platform.Message)
-	go msgHandler(c)
-	go discord.Start(c)
-	go twitch.Start(c)
+	Start()
 
 	<-sc
 	fmt.Println("Stopping...")
 }
 
-func msgHandler(c chan platform.Message) {
-	for msg := range c {
-		if msg.Platform == "twitch" {
-			newMessage, passed := prepareMessage(msg)
-			if passed {
-				markov.Input(msg.ChannelName, newMessage)
-			}
-		} else if msg.Platform == "discord" {
-			commands.AdminCommands(msg)
-		}
-	}
-}
+func Start() {
+	c := make(chan platform.Message)
 
-func outputTicker() {
-	for range time.Tick(30 * time.Second) {
-		chains := markov.Chains()
-		for _, chain := range chains {
-			oi := markov.OutputInstructions{
-				Method: "LikelyBeginning",
-				Chain:  chain,
-			}
-			output, problem := markov.Output(oi)
-			if problem != "" {
-				discord.Say("error-tracking", problem)
-			} else {
-				str := "Channel: " + chain + "\nMessage: " + output
-				discord.Say("all", str)
-				discord.Say(chain, output)
+	go twitter.Start()
+	go api.HandleRequests()
+	go handler.MsgHandler(c)
 
-				if global.Regex.MatchString(output) {
-					discord.Say("quarantine", output)
-				} else {
-					twitter.AddMessageToPotentialTweets(chain, output)
-				}
-			}
-		}
+	go discord.Start(c)
+	msg := <-c
+	if msg.Platform == "internal" {
+		fmt.Println("Directives gathered")
 	}
+	twitch.GatherEmotes()
+	go twitch.Start(c)
 }

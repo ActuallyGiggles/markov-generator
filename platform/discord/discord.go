@@ -43,9 +43,10 @@ func Start(ch chan platform.Message) {
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
 
+	fmt.Println("Discord started")
+
 	finishInit := platform.Message{
 		Platform: "internal",
-		Content:  "finished discord init",
 	}
 
 	ch <- finishInit

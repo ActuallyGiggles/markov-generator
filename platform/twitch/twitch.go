@@ -3,6 +3,7 @@ package twitch
 import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
+	"fmt"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )
@@ -10,7 +11,7 @@ import (
 var client *twitch.Client
 
 // Start creates a twitch client and connects it.
-func clientStart(in chan platform.Message) {
+func Start(in chan platform.Message) {
 	// Make unexported client use the address for the initialized client
 	client = &twitch.Client{}
 	client = twitch.NewClient(global.BotName, global.TwitchBotOauth)
@@ -29,15 +30,19 @@ func clientStart(in chan platform.Message) {
 	})
 
 	// client.Join(global.BotName)
+	// fmt.Println(global.BotName)
 
 	for _, directive := range global.Directives {
 		client.Join(directive.ChannelName)
+		fmt.Println(directive.ChannelName)
 	}
 
 	err := client.Connect()
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("Twitch Started")
 }
 
 // Say sends a message to a specific twitch chatroom.

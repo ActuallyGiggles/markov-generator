@@ -31,6 +31,8 @@ func Start() {
 	}
 
 	go pickTweet()
+
+	fmt.Println("Twitter started")
 }
 
 func SendTweet(channel string, message string) {
