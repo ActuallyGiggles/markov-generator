@@ -15,7 +15,31 @@ import (
 )
 
 func homePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	welcome := struct {
+		Welcome string
+		Usage   string
+		Example string
+		PS      string
+		Socials struct {
+			Twitter string
+			Discord string
+		}
+	}{
+		Welcome: "Welcome to the HomePage!",
+		Usage:   "Start using this API by going to /getsentence and ?channel=[channel]",
+		Example: "https://actuallygiggles.localtonet.com/getsentence?channel=39daph",
+		PS:      "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!",
+		Socials: struct {
+			Twitter string
+			Discord string
+		}{
+			Twitter: "https://twitter.com/shit_chat_says",
+			Discord: "discord.gg/wA96rfyn9p",
+		},
+	}
 	fmt.Fprintf(w, "Welcome to the HomePage!")
+	json.NewEncoder(w).Encode(welcome)
 }
 
 func getSentencePage(w http.ResponseWriter, r *http.Request) {
