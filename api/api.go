@@ -24,6 +24,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		Socials struct {
 			Twitter string
 			Discord string
+			GitHub  string
 		}
 	}{
 		Welcome: "Welcome to the HomePage!",
@@ -33,9 +34,11 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		Socials: struct {
 			Twitter string
 			Discord string
+			GitHub  string
 		}{
 			Twitter: "https://twitter.com/shit_chat_says",
 			Discord: "discord.gg/wA96rfyn9p",
+			GitHub:  "https://github.com/ActuallyGiggles/markov-generator",
 		},
 	}
 	fmt.Fprintf(w, "Welcome to the HomePage!")
