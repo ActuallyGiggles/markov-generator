@@ -3,7 +3,6 @@ package api
 import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform/discord"
-	"MarkovGenerator/platform/twitch"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -66,60 +65,60 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 			Error:          "Channel is blank!",
 		}
 	} else {
-		_, ok := twitch.GetBroadcasterID(channel)
-		if !ok {
+		// _, ok := twitch.GetBroadcasterID(channel)
+		// if !ok {
+		// 	apiResponse = APIResponse{
+		// 		ModeUsed:       mode,
+		// 		ChannelUsed:    channel,
+		// 		MessageUsed:    message,
+		// 		MarkovSentence: "",
+		// 		Error:          strings.Title(channel) + " is not real!",
+		// 	}
+		// } else {
+		exists := false
+		for _, directive := range global.Directives {
+			if directive.ChannelName == channel {
+				exists = true
+				break
+			}
+		}
+		if !exists {
 			apiResponse = APIResponse{
 				ModeUsed:       mode,
 				ChannelUsed:    channel,
 				MessageUsed:    message,
 				MarkovSentence: "",
-				Error:          strings.Title(channel) + " is not real!",
+				Error:          strings.Title(channel) + " is not being tracked!",
 			}
 		} else {
-			exists := false
-			for _, directive := range global.Directives {
-				if directive.ChannelName == channel {
-					exists = true
-					break
+			if lockChannel(1, channel) {
+				oi := markov.OutputInstructions{
+					Method: "LikelyBeginning",
+					Chain:  channel,
 				}
-			}
-			if !exists {
+				output, problem := markov.Output(oi)
+				if problem == "" {
+					apiResponse = APIResponse{
+						ModeUsed:       mode,
+						ChannelUsed:    channel,
+						MessageUsed:    message,
+						MarkovSentence: output,
+						Error:          problem,
+					}
+				} else {
+					discord.Say("error-tracking", problem)
+				}
+			} else {
 				apiResponse = APIResponse{
 					ModeUsed:       mode,
 					ChannelUsed:    channel,
 					MessageUsed:    message,
 					MarkovSentence: "",
-					Error:          strings.Title(channel) + " is not being tracked!",
-				}
-			} else {
-				if lockChannel(1, channel) {
-					oi := markov.OutputInstructions{
-						Method: "LikelyBeginning",
-						Chain:  channel,
-					}
-					output, problem := markov.Output(oi)
-					if problem == "" {
-						apiResponse = APIResponse{
-							ModeUsed:       mode,
-							ChannelUsed:    channel,
-							MessageUsed:    message,
-							MarkovSentence: output,
-							Error:          problem,
-						}
-					} else {
-						discord.Say("error-tracking", problem)
-					}
-				} else {
-					apiResponse = APIResponse{
-						ModeUsed:       mode,
-						ChannelUsed:    channel,
-						MessageUsed:    message,
-						MarkovSentence: "",
-						Error:          "channel is locked for 1s to prevent spam",
-					}
+					Error:          "channel is locked for 1s to prevent spam",
 				}
 			}
 		}
+		// }
 	}
 
 	json.NewEncoder(w).Encode(apiResponse)
