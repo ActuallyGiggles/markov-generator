@@ -44,7 +44,7 @@ func Start() {
 	c := make(chan platform.Message)
 
 	go twitter.Start()
-	go api.HandleRequests()
+	go api.HandleRequests(c)
 	go handler.MsgHandler(c)
 
 	go discord.Start(c)

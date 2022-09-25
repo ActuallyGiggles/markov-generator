@@ -32,6 +32,8 @@ func MsgHandler(c chan platform.Message) {
 			}
 		} else if msg.Platform == "discord" {
 			commands.AdminCommands(msg)
+		} else if msg.Platform == "api" {
+			handleSuccessfulOutput(msg.ChannelName, msg.Content)
 		}
 	}
 }
@@ -56,15 +58,7 @@ func warden(origin string, channel string, message string) {
 	if r == "" {
 		return
 	} else {
-		str := "Channel: " + channel + "\nMessage: " + r
-		discord.Say("all", str)
-		discord.Say(channel, r)
-
-		if global.Regex.MatchString(r) {
-			discord.Say("quarantine", r)
-		} else {
-			twitter.AddMessageToPotentialTweets(channel, r)
-		}
+		handleSuccessfulOutput(channel, r)
 	}
 }
 
@@ -113,5 +107,17 @@ func recurse(origin string, channel string, message string, c chan string) {
 	} else {
 		recursionsMx.Unlock()
 		go guard(origin, channel, message, c)
+	}
+}
+
+func handleSuccessfulOutput(channel string, message string) {
+	str := "Channel: " + channel + "\nMessage: " + message
+	discord.Say("all", str)
+	discord.Say(channel, message)
+
+	if global.Regex.MatchString(message) {
+		discord.Say("quarantine", message)
+	} else {
+		twitter.AddMessageToPotentialTweets(channel, message)
 	}
 }

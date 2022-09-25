@@ -2,6 +2,7 @@ package api
 
 import (
 	"MarkovGenerator/global"
+	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"github.com/ActuallyGiggles/go-markov"
 	"github.com/rs/cors"
 )
+
+var in chan platform.Message
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -94,6 +97,14 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 						MarkovSentence: output,
 						Error:          problem,
 					}
+
+					m := platform.Message{
+						Platform:    "api",
+						ChannelName: channel,
+						Content:     output,
+					}
+
+					in <- m
 				} else {
 					discord.Say("error-tracking", problem)
 				}
@@ -112,7 +123,8 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(apiResponse)
 }
 
-func HandleRequests() {
+func HandleRequests(c chan platform.Message) {
+	in = c
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", homePage)
 	mux.HandleFunc("/getsentence", getSentencePage)
