@@ -64,16 +64,6 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 			Error:          "Channel is blank!",
 		}
 	} else {
-		// _, ok := twitch.GetBroadcasterID(channel)
-		// if !ok {
-		// 	apiResponse = APIResponse{
-		// 		ModeUsed:       mode,
-		// 		ChannelUsed:    channel,
-		// 		MessageUsed:    message,
-		// 		MarkovSentence: "",
-		// 		Error:          strings.Title(channel) + " is not real!",
-		// 	}
-		// } else {
 		exists := false
 		for _, directive := range global.Directives {
 			if directive.ChannelName == channel {
@@ -117,7 +107,6 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		// }
 	}
 
 	json.NewEncoder(w).Encode(apiResponse)

@@ -67,10 +67,8 @@ func messageHandler(session *discordgo.Session, message *discordgo.MessageCreate
 }
 
 func reactionHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	fmt.Println("test")
 	// If correct emoji and correct user
 	if r.UserID == global.DiscordOwnerID && r.Emoji.Name == global.DiscordTweetEmote {
-		fmt.Println("test2")
 		manuallyTweet(r)
 	}
 }

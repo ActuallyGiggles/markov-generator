@@ -156,7 +156,7 @@ func get7tvChannelEmotes() {
 		body, _ := ioutil.ReadAll(resp.Body)
 		emotes := []SevenTVEmote{}
 		if err := json.Unmarshal(body, &emotes); err != nil {
-			fmt.Printf("\t %s not registered for 7tv.\n", channel.ChannelName)
+			//fmt.Printf("\t %s not registered for 7tv.\n", channel.ChannelName)
 			continue
 		}
 

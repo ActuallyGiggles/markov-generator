@@ -6,6 +6,7 @@ import (
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitter"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -45,16 +46,13 @@ func outputTicker() {
 }
 
 func warden(origin string, channel string, message string) {
-	if !lockChannel(30, channel) {
+	if !lockChannel(10, channel) {
 		return
 	}
 
 	c := make(chan string)
-
 	go guard(origin, channel, message, c)
-
 	r := <-c
-
 	if r == "" {
 		return
 	} else {
@@ -89,22 +87,31 @@ func guard(origin string, channel string, message string, c chan string) {
 
 	if problem == "" {
 		if !randomlyPickLongerSentences(output) {
-			recursionsMx.Lock()
-			recursions[channel] += 1
-
-			if recursions[channel] > 10 {
-				c <- ""
-				close(c)
-			} else {
-				go guard(origin, channel, message, c)
-			}
-
-			recursionsMx.Unlock()
+			recurse(origin, channel, message, c)
+			return
+		} else {
+			fmt.Println("SUCCESS", channel, recursions[channel])
+			c <- output
+			close(c)
 			return
 		}
-
-		c <- output
-		close(c)
+	} else {
+		recurse(origin, channel, message, c)
 		return
+	}
+}
+
+func recurse(origin string, channel string, message string, c chan string) {
+	recursionsMx.Lock()
+	recursions[channel] += 1
+	fmt.Println("FAIL", channel, recursions[channel])
+	if recursions[channel] > 10 {
+		recursions[channel] = 0
+		recursionsMx.Unlock()
+		c <- ""
+		close(c)
+	} else {
+		recursionsMx.Unlock()
+		go guard(origin, channel, message, c)
 	}
 }
