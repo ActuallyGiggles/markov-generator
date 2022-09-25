@@ -1,0 +1,87 @@
+package global
+
+import (
+	"os"
+	"regexp"
+	"sync"
+
+	"github.com/joho/godotenv"
+)
+
+var (
+	// Basic bot info
+	Prefix  string
+	BotName string
+
+	// Twitch API information
+	TwitchBotOauth    string
+	TwitchAccessToken string
+	TwitchClientID    string
+
+	// Youtube API information
+	YoutubeAPIKey       string
+	YoutubeClientID     string
+	YoutubeClientSecret string
+
+	// Emote list
+	GlobalEmotes            []string
+	ThirdPartyChannelEmotes map[string][]string
+	ChannelEmotesMx         sync.Mutex
+
+	// Discord variables
+	DiscordToken        string
+	DiscordGuildID      string
+	DiscordOwnerID      string
+	DiscordBotID        string
+	DiscordModChannelID string
+	DiscordTweetEmote   string
+
+	// Twitter variables
+	TwitterAPIKey            string
+	TwitterAPISecret         string
+	TwitterAccessToken       string
+	TwitterAccessTokenSecret string
+	TwitterClientID          string
+	TwitterClientSecret      string
+	TwitterBearerToken       string
+
+	Directives    []Directive
+	Resources     []Resource
+	TotalChannels = make(map[string]string)
+
+	BannedUsers []string
+	Regex       *regexp.Regexp
+)
+
+func Start() {
+	// Load ENV Variables
+	godotenv.Load(".env")
+
+	Prefix = os.Getenv("PREFIX")
+	BotName = os.Getenv("BOT_NAME")
+
+	// Twitch
+	TwitchBotOauth = os.Getenv("TWITCH_BOT_OAUTH")
+	TwitchAccessToken = os.Getenv("TWITCH_ACCESS_TOKEN")
+	TwitchClientID = os.Getenv("TWITCH_CLIENT_ID")
+
+	// Discord
+	DiscordToken = os.Getenv("DISCORD_TOKEN")
+	DiscordGuildID = os.Getenv("DISCORD_GUILD_ID")
+	DiscordOwnerID = os.Getenv("DISCORD_OWNER_ID")
+	DiscordBotID = os.Getenv("DISCORD_BOT_ID")
+	DiscordModChannelID = os.Getenv("DISCORD_MOD_CHANNEL_ID")
+	DiscordTweetEmote = os.Getenv("DISCORD_TWEET_EMOTE")
+
+	// Twitter
+	TwitterAccessToken = os.Getenv("TWITTER_ACCESS_TOKEN")
+	TwitterAccessTokenSecret = os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
+
+	// Initialize ThirdParyChannelEmotes map
+	ThirdPartyChannelEmotes = make(map[string][]string)
+
+	// LoadDirective()
+	// LoadStatisticsJson()
+	// LoadTextEmotesJson()
+	// LoadRegexJson()
+}
