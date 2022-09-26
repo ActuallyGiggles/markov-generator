@@ -28,6 +28,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 			Discord string
 			GitHub  string
 		}
+		ChannelsTracked []string
 	}{
 		Welcome: "Welcome to the HomePage!",
 		Usage:   "Start using this API by going to /getsentence and ?channel=[channel]",
@@ -42,6 +43,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 			Discord: "discord.gg/wA96rfyn9p",
 			GitHub:  "https://github.com/ActuallyGiggles/markov-generator",
 		},
+		ChannelsTracked: markov.Chains(),
 	}
 	json.NewEncoder(w).Encode(welcome)
 }

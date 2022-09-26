@@ -64,7 +64,7 @@ func refreshTerminal() {
 		fmt.Println()
 
 		for _, worker := range workers {
-			fmt.Printf("\tWorker %02d\t%04d\t%s\t\t%s", worker.ID, worker.Intake, worker.Status, worker.LastModified)
+			fmt.Printf("\tWorker %02d\t%04d\t%s", worker.ID, worker.Intake, worker.Status)
 			fmt.Println()
 		}
 	}
