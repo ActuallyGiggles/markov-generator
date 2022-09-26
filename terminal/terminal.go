@@ -29,8 +29,8 @@ type WorkerForTerminal struct {
 var T Terminal
 
 func UpdateTerminal(mode string) {
-	dt := time.Now()
-	now := dt.Format("15:04:05")
+	tn := time.Now()
+	now := tn.Format("15:04:05")
 
 	switch mode {
 	case "init":
@@ -40,7 +40,7 @@ func UpdateTerminal(mode string) {
 
 		T.Markov = "Active"
 		fmt.Printf("\tMarkov: %s", T.Markov)
-		T.StartTime = time.Now()
+		T.StartTime = tn
 		go refreshTerminal()
 	case "live":
 		T.Live = now
