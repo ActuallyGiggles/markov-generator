@@ -60,7 +60,7 @@ func refreshTerminal() {
 			return workers[i].ID < workers[j].ID
 		})
 
-		fmt.Println("Next Write:", markov.TimeUntilWrite())
+		fmt.Println("\tNext Write in:", markov.TimeUntilWrite())
 		fmt.Println()
 
 		for _, worker := range workers {
