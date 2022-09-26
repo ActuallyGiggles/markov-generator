@@ -6,7 +6,6 @@ import (
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitter"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -84,7 +83,6 @@ func guard(origin string, channel string, message string, c chan string) {
 			recurse(origin, channel, message, c)
 			return
 		} else {
-			fmt.Println("SUCCESS", channel, recursions[channel])
 			c <- output
 			close(c)
 			return
@@ -98,7 +96,6 @@ func guard(origin string, channel string, message string, c chan string) {
 func recurse(origin string, channel string, message string, c chan string) {
 	recursionsMx.Lock()
 	recursions[channel] += 1
-	fmt.Println("FAIL", channel, recursions[channel])
 	if recursions[channel] > 10 {
 		recursions[channel] = 0
 		recursionsMx.Unlock()

@@ -8,6 +8,7 @@ import (
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"MarkovGenerator/platform/twitter"
+	"MarkovGenerator/terminal"
 
 	"fmt"
 	"os"
@@ -27,7 +28,7 @@ func main() {
 	i := markov.StartInstructions{
 		Workers:       10,
 		WriteInterval: 10,
-		IntervalUnit:  "seconds",
+		IntervalUnit:  "minutes",
 		StartKey:      "b5G(n1$I!4g",
 		EndKey:        "e1$D(n7",
 	}
@@ -54,4 +55,6 @@ func Start() {
 	}
 	twitch.GatherEmotes()
 	go twitch.Start(c)
+
+	terminal.UpdateTerminal("init")
 }

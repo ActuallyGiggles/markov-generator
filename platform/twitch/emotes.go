@@ -2,6 +2,7 @@ package twitch
 
 import (
 	"MarkovGenerator/global"
+	"MarkovGenerator/terminal"
 )
 
 var (
@@ -37,6 +38,8 @@ func getEmoteController() {
 	}
 
 	didInitializationHappen = true
+
+	terminal.UpdateTerminal("emotes")
 }
 
 func cleanAndTransferChannelEmotes() {

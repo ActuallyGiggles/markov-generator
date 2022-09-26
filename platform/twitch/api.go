@@ -2,6 +2,7 @@ package twitch
 
 import (
 	"MarkovGenerator/global"
+	"MarkovGenerator/terminal"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -342,4 +343,5 @@ func GetLiveStatuses() {
 		r := GetLiveStatus(channel.ChannelName)
 		IsLive[channel.ChannelName] = r
 	}
+	terminal.UpdateTerminal("live")
 }
