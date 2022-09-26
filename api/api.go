@@ -48,21 +48,21 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 func getSentencePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	mode := r.URL.Query().Get("mode")
-	channel := r.URL.Query().Get("channel")
-	message := r.URL.Query().Get("message")
+	method := r.URL.Query().Get("method")
+	channel := strings.ToLower(r.URL.Query().Get("channel"))
+	target := r.URL.Query().Get("target")
 
 	var apiResponse APIResponse
 
-	if mode == "" {
-		mode = "beginning"
+	if method == "" {
+		method = "beginning"
 	}
 
 	if channel == "" {
 		apiResponse = APIResponse{
-			ModeUsed:       mode,
+			ModeUsed:       method,
 			ChannelUsed:    channel,
-			MessageUsed:    message,
+			MessageUsed:    target,
 			MarkovSentence: "",
 			Error:          "Channel is blank!",
 		}
@@ -76,9 +76,9 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 		}
 		if !exists {
 			apiResponse = APIResponse{
-				ModeUsed:       mode,
+				ModeUsed:       method,
 				ChannelUsed:    channel,
-				MessageUsed:    message,
+				MessageUsed:    target,
 				MarkovSentence: "",
 				Error:          strings.Title(channel) + " is not being tracked!",
 			}
@@ -91,9 +91,9 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 				output, problem := markov.Output(oi)
 				if problem == "" {
 					apiResponse = APIResponse{
-						ModeUsed:       mode,
+						ModeUsed:       method,
 						ChannelUsed:    channel,
-						MessageUsed:    message,
+						MessageUsed:    target,
 						MarkovSentence: output,
 						Error:          problem,
 					}
@@ -110,9 +110,9 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				apiResponse = APIResponse{
-					ModeUsed:       mode,
+					ModeUsed:       method,
 					ChannelUsed:    channel,
-					MessageUsed:    message,
+					MessageUsed:    target,
 					MarkovSentence: "",
 					Error:          "channel is locked for 1s to prevent spam",
 				}
