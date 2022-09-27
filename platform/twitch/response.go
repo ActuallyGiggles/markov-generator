@@ -6,14 +6,14 @@ import (
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitter"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/ActuallyGiggles/go-markov"
+	"MarkovGenerator/markov"
 )
 
 var (
@@ -45,8 +45,8 @@ func sendBackOutput(msg platform.Message) {
 					chainToUse, _ = GetRandomChannel(directive.ChannelName)
 				}
 
-				if _, ok := jsonToChain("./markovdb/" + chainToUse + ".json"); !ok {
-					fmt.Println(chainToUse, "does not have a markov chain yet")
+				if _, ok := jsonToChain("./markov/chains/" + chainToUse + ".json"); !ok {
+					log.Println(chainToUse, "does not have a chain yet")
 					return
 				}
 
@@ -125,7 +125,7 @@ func GetRandomChannel(channel string) (string, bool) {
 func jsonToChain(path string) (chain map[string]map[string]map[string]int, exists bool) {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Printf("Failed reading file: %s", err)
+		log.Printf("Failed reading file: %s", err)
 		return nil, false
 	}
 
@@ -133,13 +133,13 @@ func jsonToChain(path string) (chain map[string]map[string]map[string]int, exist
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println("jsonToChain error: ", path, "\n", err)
+		log.Println("jsonToChain error: ", path, "\n", err)
 		return nil, false
 	}
 
 	err = json.Unmarshal(content, &chain)
 	if err != nil {
-		fmt.Println("Error when unmarshalling file:", path, "\n", err)
+		log.Println("Error when unmarshalling file:", path, "\n", err)
 		return nil, false
 	}
 

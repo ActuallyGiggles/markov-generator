@@ -2,12 +2,13 @@ package terminal
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"sort"
 	"time"
 
-	"github.com/ActuallyGiggles/go-markov"
+	"MarkovGenerator/markov"
 )
 
 type Terminal struct {
@@ -39,7 +40,7 @@ func UpdateTerminal(mode string) {
 		cmd.Run()
 
 		T.Markov = "Active"
-		fmt.Printf("\tMarkov: %s", T.Markov)
+		log.Printf("\tMarkov: %s", T.Markov)
 		T.StartTime = tn
 		go refreshTerminal()
 	case "live":
@@ -56,17 +57,22 @@ func refreshTerminal() {
 		cmd.Run()
 
 		T.RunningTime = time.Now().Sub(T.StartTime)
-		fmt.Printf("\tMarkov:       %s\n\tRunning time: %s\n\tLive:         %s\n\tEmotes:       %s\n\n", T.Markov, T.RunningTime, T.Live, T.Emotes)
+		fmt.Println("\tMarkov:       ", T.Markov)
+		fmt.Println("\tRunning time: ", T.RunningTime)
+		fmt.Println("\tLive:         ", T.Live)
+		fmt.Println("\tEmotes:       ", T.Emotes)
 
 		workers := markov.WorkersStats()
 		sort.Slice(workers, func(i, j int) bool {
 			return workers[i].ID < workers[j].ID
 		})
-		fmt.Println("\tNext Write in:", markov.TimeUntilWrite())
+
 		fmt.Println()
+		pi := markov.PeakIntake()
+		fmt.Println("\tPeak intake:  ", pi.Amount, pi.Time.Format("15:04:05"))
+		fmt.Println("\tNext write in:", markov.TimeUntilWrite())
 		for _, worker := range workers {
-			fmt.Printf("\tWorker %02d\t%04d\t%s", worker.ID, worker.Intake, worker.Status)
-			fmt.Println()
+			fmt.Printf("\tWorker %02d\t%04d\t%s\n", worker.ID, worker.Intake, worker.Status)
 		}
 	}
 }

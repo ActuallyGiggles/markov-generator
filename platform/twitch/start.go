@@ -1,7 +1,9 @@
 package twitch
 
 import (
+	"MarkovGenerator/global"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -10,24 +12,26 @@ var (
 )
 
 func GatherEmotes() {
-	fmt.Println("Gathering emotes")
+	log.Println("Gathering emotes")
 	GetLiveStatuses()
-	getEmoteController()
+	GetEmoteController()
+	fmt.Println(global.ThirdPartyChannelEmotes)
+	time.Sleep(10 * time.Second)
 	didInitializationHappen = true
-	fmt.Println("Emotes gathered")
+	log.Println("Emotes gathered")
 	go updateLiveStatuses()
 	go refreshEmotes()
 }
 
 func updateLiveStatuses() {
 	for range time.Tick(30 * time.Second) {
-		fmt.Println("Updating live statuses...")
+		log.Println("Updating live statuses...")
 		GetLiveStatuses()
 	}
 }
 
 func refreshEmotes() {
 	for range time.Tick(10 * time.Minute) {
-		getEmoteController()
+		GetEmoteController()
 	}
 }

@@ -4,51 +4,49 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
+	"MarkovGenerator/platform/twitch"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
-	"github.com/ActuallyGiggles/go-markov"
+	"MarkovGenerator/markov"
+
 	"github.com/rs/cors"
 )
 
 var in chan platform.Message
 
 func homePage(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit homePage Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 	welcome := struct {
-		Welcome string
-		Usage   string
-		Example string
-		PS      string
+		Welcome string `json:"welcome"`
+		Usage   string `json:"usage"`
+		Example string `json:"example"`
+		PS      string `json:"ps"`
 		Socials struct {
-			Twitter string
-			Discord string
-			GitHub  string
-		}
-		ChannelsTracked []string
-	}{
-		Welcome: "Welcome to the HomePage!",
-		Usage:   "Start using this API by going to /getsentence and ?channel=[channel]",
-		Example: "https://actuallygiggles.localtonet.com/getsentence?channel=39daph",
-		PS:      "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!",
-		Socials: struct {
-			Twitter string
-			Discord string
-			GitHub  string
-		}{
-			Twitter: "https://twitter.com/shit_chat_says",
-			Discord: "discord.gg/wA96rfyn9p",
-			GitHub:  "https://github.com/ActuallyGiggles/markov-generator",
-		},
-		ChannelsTracked: markov.Chains(),
-	}
+			Twitter string `json:"twitter"`
+			Discord string `json:"discord"`
+			GitHub  string `json:"github"`
+		} `json:"socials"`
+		ChannelsTracked []string `json:"channels-tracked"`
+	}{}
+
+	welcome.Welcome = "Welcome to the HomePage!"
+	welcome.Usage = "Start using this API by going to /getsentence and ?channel=[channel]"
+	welcome.Example = "https://actuallygiggles.localtonet.com/getsentence?channel=39daph"
+	welcome.PS = "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!"
+	welcome.Socials.Twitter = "https://twitter.com/shit_chat_says"
+	welcome.Socials.Discord = "discord.gg/wA96rfyn9p"
+	welcome.Socials.GitHub = "https://github.com/ActuallyGiggles/markov-generator"
+	welcome.ChannelsTracked = markov.Chains()
+
 	json.NewEncoder(w).Encode(welcome)
 }
 
-func getSentencePage(w http.ResponseWriter, r *http.Request) {
+func getSentence(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit getSentence Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 	method := r.URL.Query().Get("method")
 	channel := strings.ToLower(r.URL.Query().Get("channel"))
@@ -125,14 +123,56 @@ func getSentencePage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(apiResponse)
 }
 
+func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit getTwitchBroadcasterInfo Endpoint")
+	w.Header().Set("Content-Type", "application/json")
+	channel := strings.ToLower(r.URL.Query().Get("channel"))
+
+	response := struct {
+		ID              string `json:"id"`
+		Login           string `json:"login"`
+		DisplayName     string `json:"display_name"`
+		Type            string `json:"type"`
+		BroadcasterType string `json:"broadcaster_type"`
+		Description     string `json:"description"`
+		ProfileImageUrl string `json:"profile_image_url"`
+		OfflineImageUrl string `json:"offline_image_url"`
+		ViewCount       int    `json:"view_count"`
+		Email           string `json:"email"`
+		CreatedAt       string `json:"created_at"`
+		Error           string `json:"error"`
+	}{}
+
+	d, ok := twitch.GetBroadcasterInfo(channel)
+	if !ok {
+		response.Error = "Something went wrong... Is this a real user? Are they banned?"
+	} else {
+		response.ID = d.ID
+		response.Login = d.Login
+		response.DisplayName = d.DisplayName
+		response.Type = d.Type
+		response.BroadcasterType = d.BroadcasterType
+		response.Description = d.Description
+		response.ProfileImageUrl = d.ProfileImageUrl
+		response.OfflineImageUrl = d.OfflineImageUrl
+		response.ViewCount = d.ViewCount
+		response.Email = d.Email
+		response.CreatedAt = d.CreatedAt
+		response.Error = ""
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
 func HandleRequests(c chan platform.Message) {
 	in = c
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", homePage)
-	mux.HandleFunc("/getsentence", getSentencePage)
+	mux.HandleFunc("/get-sentence", getSentence)
+	mux.HandleFunc("/twitch-broadcaster-info", getSentence)
 
 	handler := cors.Default().Handler(mux)
-	fmt.Println("API started")
+	log.Println("API started")
 	log.Fatal(http.ListenAndServe(":10000", handler))
 }
 

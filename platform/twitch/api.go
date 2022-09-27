@@ -5,49 +5,60 @@ import (
 	"MarkovGenerator/terminal"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
 // GetTwitchBroadcasterID gets a broadcaster's twitch ID.
 //
 // Returns the ID and whether function was successful.
-func GetBroadcasterID(channel string) (ID string, ok bool) {
+func GetBroadcasterInfo(channel string) (data Data, ok bool) {
 	url := "https://api.twitch.tv/helix/users?login=" + channel
 
+	d := Data{}
 	var jsonStr = []byte(`{"":""}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
-		fmt.Println("	GetBroadcasterID failed\n", err)
-		return "", false
+		log.Println("	GetBroadcasterID failed\n", err)
+		return d, false
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("	GetBroadcasterID failed\n", err)
-		return "", false
+		log.Println("	GetBroadcasterID failed\n", err)
+		return d, false
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	broadcaster := TwitchGetBroadcasterID[Broadcaster]{}
+	broadcaster := Broadcaster[Data]{}
 	if err := json.Unmarshal(body, &broadcaster); err != nil {
-		fmt.Println("	GetBroadcasterID failed\n", err)
-		return "", false
+		log.Println("	GetBroadcasterID failed\n", err)
+		return d, false
 	}
-	for _, value := range broadcaster.Data {
-		return value.ID, true
+	for _, v := range broadcaster.Data {
+		d.ID = v.ID
+		d.Login = v.Login
+		d.DisplayName = v.DisplayName
+		d.Type = v.Type
+		d.BroadcasterType = v.BroadcasterType
+		d.Description = v.Description
+		d.ProfileImageUrl = v.ProfileImageUrl
+		d.OfflineImageUrl = v.OfflineImageUrl
+		d.ViewCount = v.ViewCount
+		d.Email = v.Email
+		d.CreatedAt = v.CreatedAt
 	}
-	return "", false
+	return d, true
 }
 
 func getBroadcasterIDs() {
 	for _, channel := range global.Directives {
-		id, ok := GetBroadcasterID(channel.ChannelName)
+		data, ok := GetBroadcasterInfo(channel.ChannelName)
 		if ok {
-			broadcasterIDs[channel.ChannelName] = id
+			broadcaster[channel.ChannelName] = data
 		}
 	}
 }
@@ -80,29 +91,33 @@ func getTwitchGlobalEmotes() {
 }
 
 func getTwitchChannelEmotes() {
-	for _, broadcasterID := range broadcasterIDs {
-		url := "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + broadcasterID
+	for _, d := range broadcaster {
+		ID := d.ID
+		url := "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + ID
 
 		var jsonStr = []byte(`{"":""}`)
 		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 		req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
 		req.Header.Set("Client-Id", global.TwitchClientID)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n1", broadcasterID)
+			log.Printf("\t getTwitchChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n1", ID)
+			log.Println(err)
 		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n2", broadcasterID)
+			log.Printf("\t getTwitchChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n2", ID)
+			log.Println(err)
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
 		emotes := TwitchEmoteAPIResponse[TwitchChannelEmote]{}
 		if err := json.Unmarshal(body, &emotes); err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n3", broadcasterID)
+			log.Printf("\t getTwitchChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n3", ID)
+			log.Println(err)
 		}
 
 		for _, emote := range emotes.Data {
@@ -117,18 +132,18 @@ func get7tvGlobalEmotes() {
 	var jsonStr = []byte(`{"":""}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	emotes := []SevenTVEmote{}
 	if err := json.Unmarshal(body, &emotes); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	for _, emote := range emotes {
@@ -143,21 +158,22 @@ func get7tvChannelEmotes() {
 		var jsonStr = []byte(`{"":""}`)
 		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n1", channel.ChannelName)
+			log.Printf("\t get7tvChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n1", channel.ChannelName)
+			log.Println(err)
 		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n2", channel.ChannelName)
+			log.Printf("\t get7tvChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n2", channel.ChannelName)
+			log.Println(err)
 			continue
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
 		emotes := []SevenTVEmote{}
 		if err := json.Unmarshal(body, &emotes); err != nil {
-			//fmt.Printf("\t %s not registered for 7tv.\n", channel.ChannelName)
 			continue
 		}
 
@@ -169,8 +185,6 @@ func get7tvChannelEmotes() {
 			// global.ThirdPartyChannelEmotes[channel] = append(global.ThirdPartyChannelEmotes[channel], emote.Name)
 			// global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
 		}
-
-		//fmt.Printf("%s has %d 7TV emotes.", channel.PlatformChannelName, count)
 	}
 }
 
@@ -200,45 +214,45 @@ func getBttvGlobalEmotes() {
 }
 
 func getBttvChannelEmotes() {
-	for user, broadcasterID := range broadcasterIDs {
-		url := "https://api.betterttv.net/3/cached/users/twitch/" + broadcasterID
+	for _, d := range broadcaster {
+		ID := d.ID
+		user := d.Login
+		url := "https://api.betterttv.net/3/cached/users/twitch/" + ID
 
 		var jsonStr = []byte(`{"":""}`)
 		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n1", broadcasterID)
+			log.Printf("\t getBttvChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n3", ID)
+			log.Println(err)
 		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n2", broadcasterID)
+			log.Printf("\t getBttvChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n3", ID)
+			log.Println(err)
 			continue
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
 		emotes := BttvChannelEmotes[BttvEmote]{}
 		if err := json.Unmarshal(body, &emotes); err != nil {
-			fmt.Printf("\t %s not registered for Bttv.\n", user)
+			log.Printf("\t getBttvChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n3", ID)
+			log.Println(err)
 		}
 
 		count := 0
 
 		for _, emote := range emotes.ChannelEmotes {
-			// global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
-			// global.ThirdPartyChannelEmotes[user] = append(global.ThirdPartyChannelEmotes[user], emote.Name)
 			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], emote.Name)
 			count += 1
 		}
 		for _, emote := range emotes.SharedEmotes {
-			// global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
-			// global.ThirdPartyChannelEmotes[user] = append(global.ThirdPartyChannelEmotes[user], emote.Name)
 			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], emote.Name)
 			count += 1
 		}
-
-		//fmt.Printf("%s has %d BTTV emotes.", user, count)
 	}
 }
 
@@ -270,20 +284,24 @@ func getFfzGlobalEmotes() {
 }
 
 func getFfzChannelEmotes() {
-	for user, broadcasterID := range broadcasterIDs {
-		url := "https://api.frankerfacez.com/v1/room/id/" + broadcasterID
+	for _, d := range broadcaster {
+		ID := d.ID
+		user := d.Login
+		url := "https://api.frankerfacez.com/v1/room/id/" + ID
 
 		var jsonStr = []byte(`{"":""}`)
 		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n1", broadcasterID)
+			log.Printf("\t getFfzChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n1", ID)
+			log.Println(err)
 		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\t For channel %s\n2", broadcasterID)
+			log.Printf("\t getFfzChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n1", ID)
+			log.Println(err)
 			continue
 		}
 		defer resp.Body.Close()
@@ -291,7 +309,9 @@ func getFfzChannelEmotes() {
 
 		set := FfzEmotes{}
 		if err := json.Unmarshal(body, &set); err != nil {
-			fmt.Printf("\t %s not registered for Ffz.\n", user)
+			log.Printf("\t getFfzChannelEmotes failed\n")
+			log.Printf("\t For channel %s\n1", ID)
+			log.Println(err)
 		}
 
 		count := 0
@@ -303,8 +323,6 @@ func getFfzChannelEmotes() {
 				count += 1
 			}
 		}
-
-		//fmt.Printf("%s has %d FFZ emotes.", user, count)
 	}
 }
 
@@ -315,19 +333,18 @@ func GetLiveStatus(channelName string) (live bool) {
 	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	var stream StreamStatusData
 	if err := json.Unmarshal(body, &stream); err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	}
 	if len(stream.Data) == 0 {
 		return false

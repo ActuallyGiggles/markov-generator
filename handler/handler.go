@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActuallyGiggles/go-markov"
+	"MarkovGenerator/markov"
 )
 
 var (
@@ -47,7 +47,7 @@ func outputTicker() {
 }
 
 func warden(origin string, channel string, message string) {
-	if !lockChannel(10, channel) {
+	if !lockChannel(30, channel) {
 		return
 	}
 

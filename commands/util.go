@@ -4,7 +4,7 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
-	"fmt"
+	"log"
 	"strings"
 )
 
@@ -31,8 +31,6 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 		return
 	}
 
-	fmt.Println(platformChannelID, discordChannelID)
-
 	channel := global.Directive{
 		Platform:         platform,
 		ChannelName:      channelName,
@@ -54,6 +52,7 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 	global.Directives = append(global.Directives, channel)
 
 	twitch.GetLiveStatuses()
+	twitch.GetEmoteController()
 	twitch.Join(channelName)
 
 	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" added successfully.")
@@ -95,7 +94,7 @@ func updateDirective(returnChannelID string, messageID string, args []string) {
 
 	success = removeDirective(channel.ChannelName)
 	if !success {
-		fmt.Println("failed to remove directive " + channel.ChannelName)
+		log.Println("failed to remove directive " + channel.ChannelName)
 		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
 	}
 	global.Directives = append(global.Directives, channel)
@@ -111,7 +110,7 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 
 	existingArgs, success := findExistingSettings(channelName)
 	if !success {
-		fmt.Println("failed to find existing args for " + channelName)
+		log.Println("failed to find existing args for " + channelName)
 		discord.Say("error-tracking", "failed to find existing args for "+channelName)
 	}
 
@@ -146,7 +145,7 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 
 	success = removeDirective(channel.ChannelName)
 	if !success {
-		fmt.Println("failed to remove directive " + channel.ChannelName)
+		log.Println("failed to remove directive " + channel.ChannelName)
 		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
 	}
 	global.Directives = append(global.Directives, channel)
@@ -211,12 +210,12 @@ func findSettings(mode string, args []string) (connected bool, online bool, offl
 func findChannelIDs(mode string, platform string, channelName string, returnChannelID string) (platformChannelID string, discordChannelID string, success bool) {
 	if mode == "add" {
 		if platform == "twitch" {
-			c, ok := twitch.GetBroadcasterID(channelName)
+			c, ok := twitch.GetBroadcasterInfo(channelName)
 			if !ok {
 				go discord.SayByIDAndDelete(returnChannelID, "Is this a real twitch channel?")
 				return "", "", false
 			}
-			platformChannelID = c
+			platformChannelID = c.ID
 		} else if platform == "youtube" {
 			go discord.SayByIDAndDelete(returnChannelID, "YouTube support not yet added.")
 			return

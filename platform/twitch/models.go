@@ -1,10 +1,10 @@
 package twitch
 
-type TwitchGetBroadcasterID[T any] struct {
+type Broadcaster[T any] struct {
 	Data []T
 }
 
-type Broadcaster struct {
+type Data struct {
 	ID              string `json:"id"`
 	Login           string `json:"login"`
 	DisplayName     string `json:"display_name"`

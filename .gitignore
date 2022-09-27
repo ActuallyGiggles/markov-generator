@@ -20,3 +20,4 @@ localtonet_key.txt
 # vendor/
 .history/
 .sync/
+/markov/

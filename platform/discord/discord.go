@@ -4,10 +4,9 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/twitter"
+	"log"
+	"sync"
 
-	//"MarkovGenerator/platform/twitter"
-
-	"fmt"
 	"strings"
 	"time"
 
@@ -19,18 +18,18 @@ var (
 	discord *discordgo.Session
 )
 
-func Start(ch chan platform.Message) {
+func Start(ch chan platform.Message, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	in = ch
 
 	bot, err := discordgo.New("Bot " + global.DiscordToken)
 	discord = bot
-
 	if err != nil {
 		panic(err)
 	}
 
 	err = discord.Open()
-
 	if err != nil {
 		panic(err)
 	}
@@ -43,13 +42,7 @@ func Start(ch chan platform.Message) {
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
 
-	fmt.Println("Discord started")
-
-	finishInit := platform.Message{
-		Platform: "internal",
-	}
-
-	ch <- finishInit
+	log.Println("Discord started")
 }
 
 // messageHandler receives messages and sends them into the in channel.
@@ -77,19 +70,21 @@ func reactionHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 //
 // Returns the message id.
 func SayByID(channelId string, message string) (id *discordgo.Message) {
+	log.Println("SayByID")
 	m, err := discord.ChannelMessageSend(channelId, wrapInCodeBlock(message))
 	if err != nil {
-		fmt.Println("	SayById failed \n", err)
+		log.Println("	SayById failed \n", err)
 	}
 	return m
 }
 
 func Say(channel string, message string) {
+	log.Println("Say")
 	for k, v := range global.TotalChannels {
 		if k == channel {
 			_, err := discord.ChannelMessageSend(v, wrapInCodeBlock(message))
 			if err != nil {
-				fmt.Println("	SayById failed \n", err)
+				log.Println("	Say failed \n", err)
 			}
 		}
 	}
@@ -117,7 +112,7 @@ func GetChannels(session *discordgo.Session) (channels []*discordgo.Channel, err
 func CreateDiscordChannel(name string) (channel *discordgo.Channel, ok bool) {
 	c, err := discord.GuildChannelCreate(global.DiscordGuildID, name, discordgo.ChannelTypeGuildText)
 	if err != nil {
-		fmt.Println("	CreateDiscordChannel failed\n", err)
+		log.Println("	CreateDiscordChannel failed\n", err)
 		return nil, false
 	}
 	return c, true
@@ -131,7 +126,7 @@ func DeleteDiscordChannel(name string) (ok bool) {
 		if c.ChannelName == name {
 			_, err := discord.ChannelDelete(c.ChannelID)
 			if err != nil {
-				fmt.Println("	DeleteDiscordChannel failed\n", err)
+				log.Println("	DeleteDiscordChannel failed\n", err)
 			}
 		}
 	}
@@ -141,8 +136,7 @@ func DeleteDiscordChannel(name string) (ok bool) {
 func DeleteDiscordMessage(channelID string, messageID string) {
 	err := discord.ChannelMessageDelete(channelID, messageID)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(channelID, messageID)
+		log.Println("	DeleteDiscordChannel failed\n", err)
 	}
 }
 
@@ -184,11 +178,11 @@ func GetDirectivesAndResources(session *discordgo.Session) (ok bool) {
 
 	if !doBannedUsersExist {
 		createResource("banned-users")
-		fmt.Println("Created banned-users.")
+		log.Println("Created banned-users.")
 	}
 	if !doesRegexExist {
 		createResource("regex")
-		fmt.Println("Created regex.")
+		log.Println("Created regex.")
 	}
 
 	return true
@@ -213,7 +207,7 @@ func UpdateResourceChannel(c global.Resource) (channel *discordgo.Message, ok bo
 
 	message, err := discord.ChannelMessageEdit(c.DiscordChannelID, c.DisplayMessageID, content)
 	if err != nil {
-		panic(fmt.Sprintf("Could not edit %s message. %e", c.DiscordChannelName, err))
+		log.Printf("Could not edit %s message. %e", c.DiscordChannelName, err)
 	}
 
 	return message, true

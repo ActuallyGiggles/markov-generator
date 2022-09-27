@@ -4,6 +4,7 @@ import (
 	"MarkovGenerator/global"
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -32,13 +33,13 @@ func Start() {
 
 	go pickTweet()
 
-	fmt.Println("Twitter started")
+	log.Println("Twitter started")
 }
 
 func SendTweet(channel string, message string) {
 	message = fmt.Sprintf("#%sChatSays \n%s", strings.Title(channel), message)
 
-	fmt.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
+	log.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
 
 	p := &types.CreateInput{
 		Text: gotwi.String(message),
@@ -46,11 +47,9 @@ func SendTweet(channel string, message string) {
 
 	_, err := managetweet.Create(context.Background(), client, p)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return
 	}
-
-	//fmt.Printf("[%s] %s\n", gotwi.StringValue(res.Data.ID), gotwi.StringValue(res.Data.Text))
 }
 
 func AddMessageToPotentialTweets(channel string, message string) {
@@ -65,7 +64,7 @@ func pickTweet() {
 	for range time.Tick(30 * time.Minute) {
 		channel, message, empty := PickRandomFromMap(potentialTweets)
 		if empty {
-			fmt.Println("Empty map.")
+			log.Println("Empty map.")
 		} else {
 			SendTweet(channel, message)
 		}

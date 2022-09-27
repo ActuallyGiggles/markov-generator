@@ -2,7 +2,7 @@ package discord
 
 import (
 	"MarkovGenerator/global"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -103,7 +103,7 @@ func getResource(resourceType string, channel *discordgo.Channel) {
 
 	m, err := discord.ChannelMessage(dChannelID, displayMessageID)
 	if err != nil {
-		panic(fmt.Sprintf("Could not get message from ChannelMessage %s", err))
+		log.Fatal("Could not get message from ChannelMessage", err)
 	}
 
 	content = m.Content
@@ -127,7 +127,7 @@ func getResource(resourceType string, channel *discordgo.Channel) {
 func createResource(resourceType string) {
 	c, ok := CreateDiscordChannel(resourceType)
 	if !ok {
-		panic(fmt.Sprintf("Could not create %s channel", resourceType))
+		log.Fatal("Could not create " + resourceType + " channel")
 	}
 
 	m := SayByID(c.ID, "This is where your "+resourceType+" will go! It uses new lines for each new entry.")
@@ -147,7 +147,7 @@ func createResource(resourceType string) {
 func updateChannelTopic(discordChannelID string, topic string) (channel *discordgo.Channel, ok bool) {
 	ch, err := discord.Channel(discordChannelID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil, false
 	}
 
@@ -160,7 +160,7 @@ func updateChannelTopic(discordChannelID string, topic string) (channel *discord
 
 	channel, err = discord.ChannelEdit(discordChannelID, &update)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil, false
 	}
 

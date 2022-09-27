@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	broadcasterIDs                  map[string]string
+	broadcaster                     map[string]Data
 	thirdPartyChannelEmotesToUpdate map[string][]string
 )
 
-func getEmoteController() {
-	broadcasterIDs = make(map[string]string)
+func GetEmoteController() {
+	broadcaster = make(map[string]Data)
 	thirdPartyChannelEmotesToUpdate = make(map[string][]string)
 
 	if !didInitializationHappen {
@@ -28,7 +28,6 @@ func getEmoteController() {
 		getFfzChannelEmotes()
 		cleanAndTransferChannelEmotes()
 	} else {
-		getBroadcasterIDs()
 		get7tvChannelEmotes()
 		getBttvChannelEmotes()
 		getFfzChannelEmotes()
