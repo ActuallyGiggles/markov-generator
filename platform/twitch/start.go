@@ -1,8 +1,6 @@
 package twitch
 
 import (
-	"MarkovGenerator/global"
-	"fmt"
 	"log"
 	"time"
 )
@@ -15,8 +13,6 @@ func GatherEmotes() {
 	log.Println("Gathering emotes")
 	GetLiveStatuses()
 	GetEmoteController()
-	fmt.Println(global.ThirdPartyChannelEmotes)
-	time.Sleep(10 * time.Second)
 	didInitializationHappen = true
 	log.Println("Emotes gathered")
 	go updateLiveStatuses()

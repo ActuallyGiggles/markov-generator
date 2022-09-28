@@ -6,6 +6,7 @@ import (
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -30,19 +31,62 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 			Discord string `json:"discord"`
 			GitHub  string `json:"github"`
 		} `json:"socials"`
-		ChannelsTracked []string `json:"channels-tracked"`
+		TrackedChannelsEndpoint string `json:"tracked_channels_endpoint"`
+		TrackedEmotesEndpoint   string `json:"tracked_emotes_endpoint"`
 	}{}
 
 	welcome.Welcome = "Welcome to the HomePage!"
 	welcome.Usage = "Start using this API by going to /getsentence and ?channel=[channel]"
-	welcome.Example = "https://actuallygiggles.localtonet.com/getsentence?channel=39daph"
+	welcome.Example = "https://actuallygiggles.localtonet.com/get-sentence?channel=39daph"
 	welcome.PS = "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!"
 	welcome.Socials.Twitter = "https://twitter.com/shit_chat_says"
 	welcome.Socials.Discord = "discord.gg/wA96rfyn9p"
 	welcome.Socials.GitHub = "https://github.com/ActuallyGiggles/markov-generator"
-	welcome.ChannelsTracked = markov.Chains()
+	welcome.TrackedChannelsEndpoint = "https://actuallygiggles.localtonet.com/tracked-channels"
+	welcome.TrackedEmotesEndpoint = "https://actuallygiggles.localtonet.com/tracked-emotes"
 
 	json.NewEncoder(w).Encode(welcome)
+}
+
+func trackedChannels(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit trackedChannels Endpoint")
+	w.Header().Set("Content-Type", "application/json")
+
+	channels := struct {
+		TrackedChannels []twitch.Data `json:"tracked-channels"`
+	}{}
+
+	chains := markov.Chains()
+	for _, d := range twitch.Broadcasters {
+		for _, chain := range chains {
+			if d.Login == chain {
+				channels.TrackedChannels = append(channels.TrackedChannels, d)
+			}
+		}
+	}
+
+	json.NewEncoder(w).Encode(channels)
+}
+
+func trackedEmotes(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit trackedEmotes Endpoint")
+	w.Header().Set("Content-Type", "application/json")
+
+	allEmotes := struct {
+		Global     []string
+		ThirdParty json.RawMessage
+	}{}
+
+	allEmotes.Global = global.GlobalEmotes
+
+	tp, err := json.Marshal(global.ThirdPartyChannelEmotes)
+	if err != nil {
+		fmt.Println("rip")
+	} else {
+		allEmotes.ThirdParty = tp
+	}
+
+	json.NewEncoder(w).Encode(allEmotes)
 }
 
 func getSentence(w http.ResponseWriter, r *http.Request) {
@@ -143,6 +187,10 @@ func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
 		Error           string `json:"error"`
 	}{}
 
+	if channel == "" {
+		response.Error = "Channel is blank! Append ?channel=[channelname] to the url."
+	}
+
 	d, ok := twitch.GetBroadcasterInfo(channel)
 	if !ok {
 		response.Error = "Something went wrong... Is this a real user? Are they banned?"
@@ -168,12 +216,14 @@ func HandleRequests(c chan platform.Message) {
 	in = c
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", homePage)
+	mux.HandleFunc("/tracked-channels", trackedChannels)
+	mux.HandleFunc("/tracked-emotes", trackedEmotes)
 	mux.HandleFunc("/get-sentence", getSentence)
-	mux.HandleFunc("/twitch-broadcaster-info", getSentence)
+	mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
 
 	handler := cors.Default().Handler(mux)
 	log.Println("API started")
-	log.Fatal(http.ListenAndServe(":10000", handler))
+	http.ListenAndServe(":10000", handler)
 }
 
 type APIResponse struct {

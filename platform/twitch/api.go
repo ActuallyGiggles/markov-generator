@@ -58,7 +58,7 @@ func getBroadcasterIDs() {
 	for _, channel := range global.Directives {
 		data, ok := GetBroadcasterInfo(channel.ChannelName)
 		if ok {
-			broadcaster[channel.ChannelName] = data
+			Broadcasters[channel.ChannelName] = data
 		}
 	}
 }
@@ -91,7 +91,7 @@ func getTwitchGlobalEmotes() {
 }
 
 func getTwitchChannelEmotes() {
-	for _, d := range broadcaster {
+	for _, d := range Broadcasters {
 		ID := d.ID
 		url := "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + ID
 
@@ -214,7 +214,7 @@ func getBttvGlobalEmotes() {
 }
 
 func getBttvChannelEmotes() {
-	for _, d := range broadcaster {
+	for _, d := range Broadcasters {
 		ID := d.ID
 		user := d.Login
 		url := "https://api.betterttv.net/3/cached/users/twitch/" + ID
@@ -284,7 +284,7 @@ func getFfzGlobalEmotes() {
 }
 
 func getFfzChannelEmotes() {
-	for _, d := range broadcaster {
+	for _, d := range Broadcasters {
 		ID := d.ID
 		user := d.Login
 		url := "https://api.frankerfacez.com/v1/room/id/" + ID

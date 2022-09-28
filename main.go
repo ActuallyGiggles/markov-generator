@@ -50,7 +50,6 @@ func Start() {
 	log.Println("Global started")
 
 	go twitter.Start()
-	go api.HandleRequests(c)
 	go handler.MsgHandler(c)
 
 	var wg sync.WaitGroup
@@ -69,6 +68,8 @@ func Start() {
 	}
 	markov.Start(i)
 	log.Println("Markov started")
+
+	go api.HandleRequests(c)
 
 	go twitch.Start(c)
 

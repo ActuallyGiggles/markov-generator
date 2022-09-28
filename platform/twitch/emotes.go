@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	broadcaster                     map[string]Data
+	Broadcasters                    map[string]Data
 	thirdPartyChannelEmotesToUpdate map[string][]string
 )
 
 func GetEmoteController() {
-	broadcaster = make(map[string]Data)
+	Broadcasters = make(map[string]Data)
 	thirdPartyChannelEmotesToUpdate = make(map[string][]string)
 
 	if !didInitializationHappen {
