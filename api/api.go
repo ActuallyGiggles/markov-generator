@@ -53,7 +53,7 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	channels := struct {
-		TrackedChannels []twitch.Data `json:"tracked-channels"`
+		TrackedChannels []twitch.Data `json:"tracked_channels"`
 	}{}
 
 	chains := markov.Chains()
@@ -73,8 +73,8 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	allEmotes := struct {
-		Global     []string
-		ThirdParty json.RawMessage
+		Global     []string        `json:"global"`
+		ThirdParty json.RawMessage `json:"third_party"`
 	}{}
 
 	allEmotes.Global = global.GlobalEmotes
