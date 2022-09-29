@@ -26,13 +26,16 @@ func MsgHandler(c chan platform.Message) {
 		if msg.Platform == "twitch" {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
-				markov.Input(msg.ChannelName, newMessage)
+				go markov.Input(msg.ChannelName, newMessage)
 				go warden("message", msg.ChannelName, msg.Content)
 			}
+			continue
 		} else if msg.Platform == "discord" {
-			commands.AdminCommands(msg)
+			go commands.AdminCommands(msg)
+			continue
 		} else if msg.Platform == "api" {
-			handleSuccessfulOutput(msg.ChannelName, msg.Content)
+			go handleSuccessfulOutput(msg.ChannelName, msg.Content)
+			continue
 		}
 	}
 }

@@ -36,4 +36,6 @@ func AdminCommands(m platform.Message) {
 	case "removebanneduser", "rbu":
 		UpdateResourceAndChannel("banned-users", "remove", m.ChannelID, m.MessageID, args)
 	}
+
+	return
 }

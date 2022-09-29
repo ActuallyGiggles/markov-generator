@@ -51,8 +51,8 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 
 	global.Directives = append(global.Directives, channel)
 
-	twitch.GetLiveStatuses()
-	twitch.GetEmoteController()
+	go twitch.GetLiveStatuses()
+	go twitch.GetEmoteController()
 	twitch.Join(channelName)
 
 	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" added successfully.")

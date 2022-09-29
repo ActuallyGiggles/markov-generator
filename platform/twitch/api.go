@@ -55,12 +55,17 @@ func GetBroadcasterInfo(channel string) (data Data, ok bool) {
 }
 
 func getBroadcasterIDs() {
+	temp := make(map[string]Data)
+
 	for _, channel := range global.Directives {
 		data, ok := GetBroadcasterInfo(channel.ChannelName)
 		if ok {
-			Broadcasters[channel.ChannelName] = data
+			temp[channel.ChannelName] = data
 		}
 	}
+
+	Broadcasters = make(map[string]Data)
+	Broadcasters = temp
 }
 
 func getTwitchGlobalEmotes() {

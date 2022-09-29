@@ -44,6 +44,12 @@ func main() {
 }
 
 func Start() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+		}
+	}()
+
 	c := make(chan platform.Message)
 
 	global.Start()

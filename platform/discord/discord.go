@@ -70,7 +70,6 @@ func reactionHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 //
 // Returns the message id.
 func SayByID(channelId string, message string) (id *discordgo.Message) {
-	log.Println("SayByID")
 	m, err := discord.ChannelMessageSend(channelId, wrapInCodeBlock(message))
 	if err != nil {
 		log.Println("	SayById failed \n", err)
@@ -79,7 +78,6 @@ func SayByID(channelId string, message string) (id *discordgo.Message) {
 }
 
 func Say(channel string, message string) {
-	log.Println("Say")
 	for k, v := range global.TotalChannels {
 		if k == channel {
 			_, err := discord.ChannelMessageSend(v, wrapInCodeBlock(message))

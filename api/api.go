@@ -52,15 +52,13 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit trackedChannels Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
-	channels := struct {
-		TrackedChannels []twitch.Data `json:"tracked_channels"`
-	}{}
+	var channels []twitch.Data
 
 	chains := markov.Chains()
 	for _, d := range twitch.Broadcasters {
 		for _, chain := range chains {
 			if d.Login == chain {
-				channels.TrackedChannels = append(channels.TrackedChannels, d)
+				channels = append(channels, d)
 			}
 		}
 	}
@@ -221,7 +219,7 @@ func HandleRequests(c chan platform.Message) {
 	mux.HandleFunc("/get-sentence", getSentence)
 	mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
 
-	handler := cors.Default().Handler(mux)
+	handler := cors.AllowAll().Handler(mux)
 	log.Println("API started")
 	http.ListenAndServe(":10000", handler)
 }

@@ -28,6 +28,7 @@ func GetEmoteController() {
 		getFfzChannelEmotes()
 		cleanAndTransferChannelEmotes()
 	} else {
+		getBroadcasterIDs()
 		get7tvChannelEmotes()
 		getBttvChannelEmotes()
 		getFfzChannelEmotes()
