@@ -151,7 +151,7 @@ func unlockChannel(timer int, channel string) {
 	channelLockMx.Unlock()
 }
 
-func randomlyPickLongerSentences(sentence string) bool {
+func RandomlyPickLongerSentences(sentence string) bool {
 	// Split sentence into words
 	s := strings.Split(sentence, " ")
 

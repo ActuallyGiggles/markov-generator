@@ -1,6 +1,8 @@
 package api
 
 import (
+	"MarkovGenerator/handler"
+	"MarkovGenerator/markov"
 	"sync"
 	"time"
 )
@@ -8,9 +10,11 @@ import (
 var (
 	channelLock   = make(map[string]bool)
 	channelLockMx sync.Mutex
+	recursions    = make(map[string]int)
+	recursionsMx  sync.Mutex
 )
 
-func lockChannel(timer int, channel string) bool {
+func lockChannel(timer float64, channel string) bool {
 	channelLockMx.Lock()
 	if channelLock[channel] {
 		channelLockMx.Unlock()
@@ -22,9 +26,56 @@ func lockChannel(timer int, channel string) bool {
 	return true
 }
 
-func unlockChannel(timer int, channel string) {
-	time.Sleep(time.Duration(timer) * time.Second)
+func unlockChannel(timer float64, channel string) {
+	time.Sleep(time.Duration(timer * 1e9))
 	channelLockMx.Lock()
 	channelLock[channel] = false
 	channelLockMx.Unlock()
+}
+
+func warden(channel string) (output string) {
+	c := make(chan string)
+	go guard(channel, c)
+	r := <-c
+	if r == "" {
+		return
+	} else {
+		return r
+	}
+}
+
+func guard(channel string, c chan string) {
+	oi := markov.OutputInstructions{
+		Chain:  channel,
+		Method: "LikelyBeginning",
+	}
+	output, problem := markov.Output(oi)
+
+	if problem == "" {
+		if !handler.RandomlyPickLongerSentences(output) {
+			recurse(channel, output, c)
+			return
+		} else {
+			c <- output
+			close(c)
+			return
+		}
+	} else {
+		recurse(channel, "", c)
+		return
+	}
+}
+
+func recurse(channel string, output string, c chan string) {
+	recursionsMx.Lock()
+	recursions[channel] += 1
+	if recursions[channel] > 100 {
+		recursions[channel] = 0
+		recursionsMx.Unlock()
+		c <- output
+		close(c)
+	} else {
+		recursionsMx.Unlock()
+		go guard(channel, c)
+	}
 }

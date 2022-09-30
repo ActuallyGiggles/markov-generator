@@ -75,14 +75,14 @@ func guard(origin string, channel string, message string, c chan string) {
 
 		oi.Method = "TargetedBeginning"
 		oi.Target = m
-	} else if origin == "ticker" {
+	} else if origin == "ticker" || origin == "api" {
 		oi.Method = "LikelyBeginning"
 	}
 
 	output, problem := markov.Output(oi)
 
 	if problem == "" {
-		if !randomlyPickLongerSentences(output) {
+		if !RandomlyPickLongerSentences(output) {
 			recurse(origin, channel, message, c)
 			return
 		} else {

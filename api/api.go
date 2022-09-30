@@ -3,7 +3,6 @@ package api
 import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
-	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"encoding/json"
 	"log"
@@ -148,19 +147,15 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 				Error:          strings.Title(channel) + " is not being tracked!",
 			}
 		} else {
-			if lockChannel(1, channel) {
-				oi := markov.OutputInstructions{
-					Method: "LikelyBeginning",
-					Chain:  channel,
-				}
-				output, problem := markov.Output(oi)
-				if problem == "" {
+			if lockChannel(.5, channel) {
+				output := warden(channel)
+				if output == "" {
 					apiResponse = APIResponse{
 						ModeUsed:       method,
 						ChannelUsed:    channel,
 						MessageUsed:    target,
-						MarkovSentence: output,
-						Error:          problem,
+						MarkovSentence: "",
+						Error:          "There was a problem on our side...",
 					}
 
 					m := platform.Message{
@@ -171,7 +166,21 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 
 					in <- m
 				} else {
-					discord.Say("error-tracking", problem)
+					apiResponse = APIResponse{
+						ModeUsed:       method,
+						ChannelUsed:    channel,
+						MessageUsed:    target,
+						MarkovSentence: output,
+						Error:          "",
+					}
+
+					m := platform.Message{
+						Platform:    "api",
+						ChannelName: channel,
+						Content:     output,
+					}
+
+					in <- m
 				}
 			} else {
 				apiResponse = APIResponse{
@@ -179,7 +188,7 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 					ChannelUsed:    channel,
 					MessageUsed:    target,
 					MarkovSentence: "",
-					Error:          "channel is locked for 1s to prevent spam",
+					Error:          "Channel is locked for 0.5s to prevent spam.",
 				}
 			}
 		}
@@ -241,7 +250,7 @@ func HandleRequests(c chan platform.Message) {
 	mux.HandleFunc("/live-channels", liveChannels)
 	mux.HandleFunc("/tracked-emotes", trackedEmotes)
 	mux.HandleFunc("/get-sentence", getSentence)
-	mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
+	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
 
 	handler := cors.AllowAll().Handler(mux)
 	log.Println("API started")
