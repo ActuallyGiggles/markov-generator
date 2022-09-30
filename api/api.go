@@ -65,6 +65,30 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(channels)
 }
 
+func liveChannels(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit liveChannels Endpoint")
+	w.Header().Set("Content-Type", "application/json")
+
+	var channelsLive []struct {
+		Name string
+		Live bool
+	}
+
+	for channel, status := range twitch.IsLive {
+		e := struct {
+			Name string
+			Live bool
+		}{}
+
+		e.Name = channel
+		e.Live = status
+
+		channelsLive = append(channelsLive, e)
+	}
+
+	json.NewEncoder(w).Encode(channelsLive)
+}
+
 func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit trackedEmotes Endpoint")
 	w.Header().Set("Content-Type", "application/json")
@@ -214,6 +238,7 @@ func HandleRequests(c chan platform.Message) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", homePage)
 	mux.HandleFunc("/tracked-channels", trackedChannels)
+	mux.HandleFunc("/live-channels", liveChannels)
 	mux.HandleFunc("/tracked-emotes", trackedEmotes)
 	mux.HandleFunc("/get-sentence", getSentence)
 	mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
