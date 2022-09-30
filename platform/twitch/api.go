@@ -91,7 +91,12 @@ func getTwitchGlobalEmotes() {
 	}
 
 	for _, emote := range emotes.Data {
-		global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  emote.Images["url_4x"],
+		}
+
+		global.GlobalEmotes = append(global.GlobalEmotes, e)
 	}
 }
 
@@ -126,7 +131,12 @@ func getTwitchChannelEmotes() {
 		}
 
 		for _, emote := range emotes.Data {
-			global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
+			e := global.Emote{
+				Name: emote.Name,
+				Url:  emote.Images["url_4x"],
+			}
+
+			global.GlobalEmotes = append(global.GlobalEmotes, e)
 		}
 	}
 }
@@ -152,7 +162,12 @@ func get7tvGlobalEmotes() {
 	}
 
 	for _, emote := range emotes {
-		global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  emote.Urls[3][1],
+		}
+
+		global.GlobalEmotes = append(global.GlobalEmotes, e)
 	}
 }
 
@@ -185,10 +200,12 @@ func get7tvChannelEmotes() {
 		count := 0
 
 		for _, emote := range emotes {
-			thirdPartyChannelEmotesToUpdate[channel.ChannelName] = append(thirdPartyChannelEmotesToUpdate[channel.ChannelName], emote.Name)
+			e := global.Emote{
+				Name: emote.Name,
+				Url:  emote.Urls[3][1],
+			}
+			thirdPartyChannelEmotesToUpdate[channel.ChannelName] = append(thirdPartyChannelEmotesToUpdate[channel.ChannelName], e)
 			count += 1
-			// global.ThirdPartyChannelEmotes[channel] = append(global.ThirdPartyChannelEmotes[channel], emote.Name)
-			// global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
 		}
 	}
 }
@@ -214,7 +231,12 @@ func getBttvGlobalEmotes() {
 	}
 
 	for _, emote := range emotes {
-		global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+		}
+
+		global.GlobalEmotes = append(global.GlobalEmotes, e)
 	}
 }
 
@@ -248,15 +270,19 @@ func getBttvChannelEmotes() {
 			log.Println(err)
 		}
 
-		count := 0
-
 		for _, emote := range emotes.ChannelEmotes {
-			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], emote.Name)
-			count += 1
+			e := global.Emote{
+				Name: emote.Name,
+				Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+			}
+			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
 		}
 		for _, emote := range emotes.SharedEmotes {
-			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], emote.Name)
-			count += 1
+			e := global.Emote{
+				Name: emote.Name,
+				Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+			}
+			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
 		}
 	}
 }
@@ -276,14 +302,30 @@ func getFfzGlobalEmotes() {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	set := FfzEmotes{}
+	set := FfzSets{}
 	if err := json.Unmarshal(body, &set); err != nil {
 		panic(err)
 	}
 
 	for _, emotes := range set.Sets {
 		for _, emote := range emotes.Emoticons {
-			global.GlobalEmotes = append(global.GlobalEmotes, emote.Name)
+			e := global.Emote{
+				Name: emote.Name,
+			}
+			for size, url := range emote.Urls {
+				switch size {
+				case "4":
+					e.Url = "https:" + url
+					break
+				case "2":
+					e.Url = "https:" + url
+					break
+				case "1":
+					e.Url = "https:" + url
+					break
+				}
+			}
+			global.GlobalEmotes = append(global.GlobalEmotes, e)
 		}
 	}
 }
@@ -312,20 +354,32 @@ func getFfzChannelEmotes() {
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
 
-		set := FfzEmotes{}
+		set := FfzSets{}
 		if err := json.Unmarshal(body, &set); err != nil {
 			log.Printf("\t getFfzChannelEmotes failed\n")
 			log.Printf("\t For channel %s\n1", ID)
 			log.Println(err)
 		}
 
-		count := 0
-
 		for _, emotes := range set.Sets {
 			for _, emote := range emotes.Emoticons {
-				// global.ThirdPartyChannelEmotes[user] = append(global.ThirdPartyChannelEmotes[user], emote.Name)
-				thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], emote.Name)
-				count += 1
+				e := global.Emote{
+					Name: emote.Name,
+				}
+				for size, url := range emote.Urls {
+					switch size {
+					case "4":
+						e.Url = "https:" + url
+						break
+					case "2":
+						e.Url = "https:" + url
+						break
+					case "1":
+						e.Url = "https:" + url
+						break
+					}
+				}
+				thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
 			}
 		}
 	}

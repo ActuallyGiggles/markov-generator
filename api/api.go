@@ -6,7 +6,6 @@ import (
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -71,18 +70,18 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	allEmotes := struct {
-		Global     []string        `json:"global"`
-		ThirdParty json.RawMessage `json:"third_party"`
+		Global []global.Emote `json:"global"`
+		//ThirdParty json.RawMessage `json:"third_party"`
 	}{}
 
 	allEmotes.Global = global.GlobalEmotes
 
-	tp, err := json.Marshal(global.ThirdPartyChannelEmotes)
-	if err != nil {
-		fmt.Println("rip")
-	} else {
-		allEmotes.ThirdParty = tp
-	}
+	// tp, err := json.Marshal(global.ThirdPartyChannelEmotes)
+	// if err != nil {
+	// 	fmt.Println("rip")
+	// } else {
+	// 	allEmotes.ThirdParty = tp
+	// }
 
 	json.NewEncoder(w).Encode(allEmotes)
 }
@@ -222,12 +221,4 @@ func HandleRequests(c chan platform.Message) {
 	handler := cors.AllowAll().Handler(mux)
 	log.Println("API started")
 	http.ListenAndServe(":10000", handler)
-}
-
-type APIResponse struct {
-	ModeUsed       string `json:"mode_used"`
-	ChannelUsed    string `json:"channel_used"`
-	MessageUsed    string `json:"message_used"`
-	MarkovSentence string `json:"markov_sentence"`
-	Error          string `json:"error"`
 }

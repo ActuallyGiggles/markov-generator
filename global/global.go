@@ -24,8 +24,8 @@ var (
 	YoutubeClientSecret string
 
 	// Emote list
-	GlobalEmotes            []string
-	ThirdPartyChannelEmotes map[string][]string
+	GlobalEmotes            []Emote
+	ThirdPartyChannelEmotes map[string][]Emote
 	ChannelEmotesMx         sync.Mutex
 
 	// Discord variables
@@ -78,7 +78,7 @@ func Start() {
 	TwitterAccessTokenSecret = os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
 	// Initialize ThirdParyChannelEmotes map
-	ThirdPartyChannelEmotes = make(map[string][]string)
+	ThirdPartyChannelEmotes = make(map[string][]Emote)
 
 	// LoadDirective()
 	// LoadStatisticsJson()

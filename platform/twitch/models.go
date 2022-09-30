@@ -45,7 +45,8 @@ type TwitchChannelEmote struct {
 }
 
 type SevenTVEmote struct {
-	Name string `json:"name"`
+	Name string     `json:"name"`
+	Urls [][]string `json:"urls"`
 }
 
 type BttvChannelEmotes[T any] struct {
@@ -55,18 +56,20 @@ type BttvChannelEmotes[T any] struct {
 
 type BttvEmote struct {
 	Name string `json:"code"`
+	ID   string `json:"id"`
+}
+
+type FfzSets struct {
+	Sets map[string]FfzSet `json:"sets"`
+}
+
+type FfzSet struct {
+	Emoticons []FfzEmotes `json:"emoticons"`
 }
 
 type FfzEmotes struct {
-	Sets map[string]Set `json:"sets"`
-}
-
-type Set struct {
-	Emoticons []Emotes `json:"emoticons"`
-}
-
-type Emotes struct {
-	Name string `json:"name"`
+	Name string            `json:"name"`
+	Urls map[string]string `json:"urls"`
 }
 
 type StreamStatusData struct {

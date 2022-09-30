@@ -7,12 +7,12 @@ import (
 
 var (
 	Broadcasters                    map[string]Data
-	thirdPartyChannelEmotesToUpdate map[string][]string
+	thirdPartyChannelEmotesToUpdate map[string][]global.Emote
 )
 
 func GetEmoteController() {
 	Broadcasters = make(map[string]Data)
-	thirdPartyChannelEmotesToUpdate = make(map[string][]string)
+	thirdPartyChannelEmotesToUpdate = make(map[string][]global.Emote)
 
 	if !didInitializationHappen {
 		global.ChannelEmotesMx.Lock()
@@ -43,9 +43,9 @@ func GetEmoteController() {
 }
 
 func cleanAndTransferChannelEmotes() {
-	global.ThirdPartyChannelEmotes = make(map[string][]string)
+	global.ThirdPartyChannelEmotes = make(map[string][]global.Emote)
 	for channelName, emoteSlice := range thirdPartyChannelEmotesToUpdate {
 		global.ThirdPartyChannelEmotes[channelName] = emoteSlice
 	}
-	thirdPartyChannelEmotesToUpdate = make(map[string][]string)
+	thirdPartyChannelEmotesToUpdate = make(map[string][]global.Emote)
 }

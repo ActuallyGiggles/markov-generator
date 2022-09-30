@@ -27,14 +27,14 @@ func lowercaseIfNotEmote(channel string, message string) string {
 	for _, word := range slice {
 		match := false
 		for _, emote := range global.GlobalEmotes {
-			if word == emote {
+			if word == emote.Name {
 				match = true
 				new = append(new, word)
 				break
 			}
 		}
 		for _, emote := range global.ThirdPartyChannelEmotes[channel] {
-			if word == emote {
+			if word == emote.Name {
 				match = true
 				new = append(new, word)
 				break

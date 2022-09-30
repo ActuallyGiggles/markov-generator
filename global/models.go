@@ -27,3 +27,8 @@ type Resource struct {
 	DisplayMessageID   string `json:"display_message_id"`
 	Content            string `json:"display_message_content"`
 }
+
+type Emote struct {
+	Name string
+	Url  string
+}
