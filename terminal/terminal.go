@@ -64,15 +64,37 @@ func refreshTerminal() {
 
 		workers := markov.WorkersStats()
 		sort.Slice(workers, func(i, j int) bool {
-			return workers[i].ID < workers[j].ID
+			return workers[i].ChainResponsibleFor < workers[j].ChainResponsibleFor
 		})
 
 		fmt.Println()
 		pi := markov.PeakIntake()
 		fmt.Println("\tPeak intake:  ", pi.Amount, pi.Time.Format("15:04:05"))
 		fmt.Println("\tNext write in:", markov.TimeUntilWrite())
-		for _, worker := range workers {
-			fmt.Printf("\tWorker %02d\t%04d\t%s\n", worker.ID, worker.Intake, worker.Status)
+
+		longestWorkerName := 0
+		for i := 0; i < len(workers); i++ {
+			worker := workers[i].ChainResponsibleFor
+			if len(worker) > longestWorkerName {
+				longestWorkerName = len(worker)
+			}
 		}
+		for i := 0; i < len(workers); i += 2 {
+			worker := workers[i]
+			fmt.Printf("\t  %-15s\t%04d\t%s", worker.ChainResponsibleFor, worker.Intake, worker.Status)
+
+			if exists := doesSliceContainIndex(workers, i+1); exists {
+				worker2 := workers[i+1]
+				fmt.Printf("\t  %-15s\t%04d\t%s\n", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
+			}
+		}
+	}
+}
+
+func doesSliceContainIndex(slice []markov.WorkerStats, index int) bool {
+	if len(slice) > index {
+		return true
+	} else {
+		return false
 	}
 }
