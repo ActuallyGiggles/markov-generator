@@ -3,14 +3,21 @@ package twitch
 import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/terminal"
+	"sync"
 )
 
 var (
-	Broadcasters                    map[string]Data
-	thirdPartyChannelEmotesToUpdate map[string][]global.Emote
+	Broadcasters                      map[string]Data
+	broadcastersMx                    sync.Mutex
+	thirdPartyChannelEmotesToUpdate   map[string][]global.Emote
+	thirdPartyChannelEmotesToUpdateMx sync.Mutex
 )
 
 func GetEmoteController() {
+	broadcastersMx.Lock()
+	thirdPartyChannelEmotesToUpdateMx.Lock()
+	defer broadcastersMx.Unlock()
+	defer thirdPartyChannelEmotesToUpdateMx.Unlock()
 	Broadcasters = make(map[string]Data)
 	thirdPartyChannelEmotesToUpdate = make(map[string][]global.Emote)
 
