@@ -3,6 +3,7 @@ package api
 import (
 	"MarkovGenerator/handler"
 	"MarkovGenerator/markov"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -12,6 +13,8 @@ var (
 	channelLockMx sync.Mutex
 	recursions    = make(map[string]int)
 	recursionsMx  sync.Mutex
+	limit         = make(map[string]int)
+	limitMx       sync.Mutex
 )
 
 func lockChannel(timer float64, channel string) bool {
@@ -31,6 +34,31 @@ func unlockChannel(timer float64, channel string) {
 	channelLockMx.Lock()
 	channelLock[channel] = false
 	channelLockMx.Unlock()
+}
+
+func limitEndpoint(timer int, endpoint string) bool {
+	limitMx.Lock()
+	endpointLimit := 0
+	switch endpoint {
+	default:
+		endpointLimit = 10
+	}
+	if limit[endpoint] > endpointLimit {
+		fmt.Println(endpoint, "not passed", limit[endpoint])
+		limitMx.Unlock()
+		return false
+	}
+	limit[endpoint] += 1
+	fmt.Println(endpoint, "passed", limit[endpoint])
+	limitMx.Unlock()
+	go func(timer int) {
+		time.Sleep(time.Duration(timer * 1e9))
+		limitMx.Lock()
+		limit[endpoint] -= 1
+		limitMx.Unlock()
+		fmt.Println(endpoint, "cleared by 1", limit[endpoint])
+	}(timer)
+	return true
 }
 
 func warden(channel string) (output string) {

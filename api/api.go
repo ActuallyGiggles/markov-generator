@@ -14,99 +14,117 @@ import (
 	"github.com/rs/cors"
 )
 
-var in chan platform.Message
+var (
+	in chan platform.Message
+)
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit homePage Endpoint")
 	w.Header().Set("Content-Type", "application/json")
-	welcome := struct {
-		Welcome string `json:"welcome"`
-		Usage   string `json:"usage"`
-		Example string `json:"example"`
-		PS      string `json:"ps"`
-		Socials struct {
-			Twitter string `json:"twitter"`
-			Discord string `json:"discord"`
-			GitHub  string `json:"github"`
-		} `json:"socials"`
-		TrackedChannelsEndpoint string `json:"tracked_channels_endpoint"`
-		TrackedEmotesEndpoint   string `json:"tracked_emotes_endpoint"`
-	}{}
-
-	welcome.Welcome = "Welcome to the HomePage!"
-	welcome.Usage = "Start using this API by going to /getsentence and ?channel=[channel]"
-	welcome.Example = "https://actuallygiggles.localtonet.com/get-sentence?channel=39daph"
-	welcome.PS = "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!"
-	welcome.Socials.Twitter = "https://twitter.com/shit_chat_says"
-	welcome.Socials.Discord = "discord.gg/wA96rfyn9p"
-	welcome.Socials.GitHub = "https://github.com/ActuallyGiggles/markov-generator"
-	welcome.TrackedChannelsEndpoint = "https://actuallygiggles.localtonet.com/tracked-channels"
-	welcome.TrackedEmotesEndpoint = "https://actuallygiggles.localtonet.com/tracked-emotes"
-
-	json.NewEncoder(w).Encode(welcome)
+	if limitEndpoint(5, "homePage") {
+		welcome := struct {
+			Welcome string `json:"welcome"`
+			Usage   string `json:"usage"`
+			Example string `json:"example"`
+			PS      string `json:"ps"`
+			Socials struct {
+				Website string `json:"website"`
+				Twitter string `json:"twitter"`
+				Discord string `json:"discord"`
+				GitHub  string `json:"github"`
+			} `json:"socials"`
+			TrackedChannelsEndpoint string `json:"tracked_channels_endpoint"`
+			TrackedEmotesEndpoint   string `json:"tracked_emotes_endpoint"`
+		}{}
+		welcome.Welcome = "Welcome to the HomePage!"
+		welcome.Usage = "Start using this API by going to /getsentence and ?channel=[channel]"
+		welcome.Example = "https://actuallygiggles.localtonet.com/get-sentence?channel=39daph"
+		welcome.PS = "Not every channel is being tracked! If you have a suggestion on which channel should be tracked, @ me on Twitter or join the Discord!"
+		welcome.Socials.Website = "https://actuallygiggles.github.io/twitch-message-generator/"
+		welcome.Socials.Twitter = "https://twitter.com/shit_chat_says"
+		welcome.Socials.Discord = "discord.gg/wA96rfyn9p"
+		welcome.Socials.GitHub = "https://github.com/ActuallyGiggles/markov-generator"
+		welcome.TrackedChannelsEndpoint = "https://actuallygiggles.localtonet.com/tracked-channels"
+		welcome.TrackedEmotesEndpoint = "https://actuallygiggles.localtonet.com/tracked-emotes"
+		json.NewEncoder(w).Encode(welcome)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 5 seconds"
+		json.NewEncoder(w).Encode(err)
+	}
 }
 
 func trackedChannels(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit trackedChannels Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
-	var channels []twitch.Data
-
-	chains := markov.Chains()
-	for _, d := range twitch.Broadcasters {
-		for _, chain := range chains {
-			if d.Login == chain {
-				channels = append(channels, d)
+	if limitEndpoint(5, "trackedChannels") {
+		var channels []twitch.Data
+		chains := markov.Chains()
+		for _, d := range twitch.Broadcasters {
+			for _, chain := range chains {
+				if d.Login == chain {
+					channels = append(channels, d)
+				}
 			}
 		}
+		json.NewEncoder(w).Encode(channels)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 5 seconds"
+		json.NewEncoder(w).Encode(err)
 	}
-
-	json.NewEncoder(w).Encode(channels)
 }
 
 func liveChannels(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit liveChannels Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
-	var channelsLive []struct {
-		Name string
-		Live bool
-	}
-
-	for channel, status := range twitch.IsLive {
-		e := struct {
+	if limitEndpoint(5, "liveChannels") {
+		var channelsLive []struct {
 			Name string
 			Live bool
+		}
+		for channel, status := range twitch.IsLive {
+			e := struct {
+				Name string
+				Live bool
+			}{}
+			e.Name = channel
+			e.Live = status
+			channelsLive = append(channelsLive, e)
+		}
+		json.NewEncoder(w).Encode(channelsLive)
+	} else {
+		err := struct {
+			Error string
 		}{}
-
-		e.Name = channel
-		e.Live = status
-
-		channelsLive = append(channelsLive, e)
+		err.Error = "Endpoint Limiter: Try again in 5 seconds"
+		json.NewEncoder(w).Encode(err)
 	}
-
-	json.NewEncoder(w).Encode(channelsLive)
 }
 
 func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit trackedEmotes Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
-	allEmotes := struct {
-		Global []global.Emote `json:"global"`
-		//ThirdParty json.RawMessage `json:"third_party"`
-	}{}
-
-	allEmotes.Global = global.GlobalEmotes
-
-	// tp, err := json.Marshal(global.ThirdPartyChannelEmotes)
-	// if err != nil {
-	// 	fmt.Println("rip")
-	// } else {
-	// 	allEmotes.ThirdParty = tp
-	// }
-
-	json.NewEncoder(w).Encode(allEmotes)
+	if limitEndpoint(5, "trackedEmotes") {
+		allEmotes := struct {
+			Global []global.Emote `json:"global"`
+		}{}
+		allEmotes.Global = global.GlobalEmotes
+		json.NewEncoder(w).Encode(allEmotes)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 5 seconds"
+		json.NewEncoder(w).Encode(err)
+	}
 }
 
 func getSentence(w http.ResponseWriter, r *http.Request) {

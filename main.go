@@ -9,7 +9,6 @@ import (
 	"MarkovGenerator/platform/discord"
 	"MarkovGenerator/platform/twitch"
 	"MarkovGenerator/platform/twitter"
-	"MarkovGenerator/terminal"
 	"io"
 	"log"
 	"sync"
@@ -78,5 +77,5 @@ func Start() {
 
 	go twitch.Start(c)
 
-	terminal.UpdateTerminal("init")
+	//terminal.UpdateTerminal("init")
 }
