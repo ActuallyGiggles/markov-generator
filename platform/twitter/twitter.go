@@ -2,6 +2,7 @@ package twitter
 
 import (
 	"MarkovGenerator/global"
+	"MarkovGenerator/platform/twitch"
 	"context"
 	"fmt"
 	"log"
@@ -37,7 +38,13 @@ func Start() {
 }
 
 func SendTweet(channel string, message string) {
-	message = fmt.Sprintf("#%sChatSays \n%s", strings.Title(channel), message)
+	for _, d := range twitch.Broadcasters {
+		if d.Login == channel {
+			channel = d.DisplayName
+		}
+	}
+
+	message = fmt.Sprintf("%s\n\n#%sChatSays\n#ShitTwitchChatSays", channel, message)
 
 	log.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
 
@@ -54,6 +61,9 @@ func SendTweet(channel string, message string) {
 
 func AddMessageToPotentialTweets(channel string, message string) {
 	// Add to map
+	if len(message) > 227 {
+		return
+	}
 	potentialTweetsMx.Lock()
 	defer potentialTweetsMx.Unlock()
 	potentialTweets[channel] = message

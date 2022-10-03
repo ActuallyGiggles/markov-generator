@@ -2,6 +2,7 @@ package handler
 
 import (
 	"MarkovGenerator/global"
+	"MarkovGenerator/markov"
 	"MarkovGenerator/platform"
 	"regexp"
 	"strings"
@@ -188,4 +189,39 @@ func DoesSliceContainIndex(slice []string, index int) bool {
 	} else {
 		return false
 	}
+}
+
+func lockResponse(timer int, channel string) bool {
+	respondLockMx.Lock()
+	if respondLock[channel] {
+		respondLockMx.Unlock()
+		return false
+	}
+	respondLock[channel] = true
+	respondLockMx.Unlock()
+	go unlockResponse(timer, channel)
+	return true
+}
+
+func unlockResponse(timer int, channel string) {
+	time.Sleep(time.Duration(timer) * time.Second)
+	respondLockMx.Lock()
+	respondLock[channel] = false
+	respondLockMx.Unlock()
+}
+
+func GetRandomChannel(channel string) (randomChannel string) {
+	// Get a random channel global.Channels list except the channel included and empty channels
+
+	var s []string
+
+	chains := markov.Chains()
+	for _, chain := range chains {
+		if chain == channel {
+			continue
+		}
+		s = append(s, chain)
+	}
+
+	return global.PickRandomFromSlice(s)
 }

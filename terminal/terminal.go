@@ -72,21 +72,21 @@ func refreshTerminal() {
 		fmt.Println("\tPeak intake:  ", pi.Amount, pi.Time.Format("15:04:05"))
 		fmt.Println("\tNext write in:", markov.TimeUntilWrite())
 
-		longestWorkerName := 0
-		for i := 0; i < len(workers); i++ {
-			worker := workers[i].ChainResponsibleFor
-			if len(worker) > longestWorkerName {
-				longestWorkerName = len(worker)
-			}
-		}
-		for i := 0; i < len(workers); i += 2 {
+		for i := 0; i < len(workers); i += 3 {
 			worker := workers[i]
-			fmt.Printf("\t  %-15s\t%04d\t%s", worker.ChainResponsibleFor, worker.Intake, worker.Status)
+			fmt.Printf("\t  %-20s\t%04d\t%-5s | ", worker.ChainResponsibleFor, worker.Intake, worker.Status)
 
 			if exists := doesSliceContainIndex(workers, i+1); exists {
 				worker2 := workers[i+1]
-				fmt.Printf("\t  %-15s\t%04d\t%s\n", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
+				fmt.Printf("%-20s\t%04d\t%-5s | ", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
 			}
+
+			if exists := doesSliceContainIndex(workers, i+2); exists {
+				worker3 := workers[i+2]
+				fmt.Printf("%-20s\t%04d\t%-5s", worker3.ChainResponsibleFor, worker3.Intake, worker3.Status)
+			}
+
+			fmt.Println()
 		}
 	}
 }

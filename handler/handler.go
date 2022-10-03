@@ -5,7 +5,9 @@ import (
 	"MarkovGenerator/global"
 	"MarkovGenerator/platform"
 	"MarkovGenerator/platform/discord"
+	"MarkovGenerator/platform/twitch"
 	"MarkovGenerator/platform/twitter"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +20,8 @@ var (
 	channelLockMx sync.Mutex
 	recursions    = make(map[string]int)
 	recursionsMx  sync.Mutex
+	respondLock   = make(map[string]bool)
+	respondLockMx sync.Mutex
 )
 
 func MsgHandler(c chan platform.Message) {
@@ -28,6 +32,7 @@ func MsgHandler(c chan platform.Message) {
 			if passed {
 				go markov.Input(msg.ChannelName, newMessage)
 				go warden("message", msg.ChannelName, msg.Content)
+				go SendBackOutput(msg)
 			}
 			continue
 		} else if msg.Platform == "discord" {
@@ -119,5 +124,66 @@ func handleSuccessfulOutput(channel string, message string) {
 		discord.Say("quarantine", message)
 	} else {
 		twitter.AddMessageToPotentialTweets(channel, message)
+	}
+}
+
+func SendBackOutput(msg platform.Message) {
+	for _, directive := range global.Directives {
+		if directive.ChannelName == msg.ChannelName {
+			onlineEnabled := directive.Settings.IsOnlineEnabled
+			offlineEnabled := directive.Settings.IsOfflineEnabled
+			random := directive.Settings.IsOptedIn
+
+			twitch.IsLiveMx.Lock()
+			live := twitch.IsLive[directive.ChannelName]
+			twitch.IsLiveMx.Unlock()
+
+			if (live && onlineEnabled) || (!live && offlineEnabled) {
+				if !lockResponse(global.RandomNumber(30, 180), directive.ChannelName) {
+					return
+				}
+
+				log.Println("Response activated in", directive.ChannelName)
+
+				chainToUse := directive.ChannelName
+
+				if random {
+					chainToUse = GetRandomChannel(directive.ChannelName)
+				}
+
+				log.Println("Random opted:", random)
+				log.Println("Chain to use:", chainToUse)
+
+				s := strings.Split(msg.Content, " ")
+				t := global.PickRandomFromSlice(s)
+
+				log.Println("Message used:", msg.Content)
+				log.Println("Target chosen:", t)
+
+				oi := markov.OutputInstructions{
+					Method: "TargetedBeginning",
+					Chain:  chainToUse,
+					Target: t,
+				}
+				output, problem := markov.Output(oi)
+
+				if problem != "" {
+					log.Println("Problem found:", problem)
+					discord.Say("error-tracking", problem)
+				} else {
+					log.Println("Response to use:", output)
+					discord.Say("all", output)
+					discord.Say(chainToUse, output)
+
+					if global.Regex.MatchString(output) {
+						discord.Say("quarantine", output)
+					} else {
+						twitter.AddMessageToPotentialTweets(chainToUse, output)
+						twitch.Say(directive.ChannelName, output)
+					}
+				}
+				return
+			}
+		}
 	}
 }

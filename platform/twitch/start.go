@@ -2,11 +2,14 @@ package twitch
 
 import (
 	"log"
+	"sync"
 	"time"
 )
 
 var (
 	didInitializationHappen = false
+	IsLive                  = make(map[string]bool)
+	IsLiveMx                sync.Mutex
 )
 
 func GatherEmotes() {

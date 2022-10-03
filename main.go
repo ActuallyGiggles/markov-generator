@@ -22,10 +22,11 @@ import (
 )
 
 func main() {
+	// Profiling
 	defer profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook).Stop()
 
 	// Logging
-	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
