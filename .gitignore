@@ -9,6 +9,8 @@
 *.sum
 *.json
 localtonet_key.txt
+logs.txt
+mem.pprof
 
 # Test binary, built with `go test -c`
 *.test

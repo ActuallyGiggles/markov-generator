@@ -62,7 +62,8 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 
 	if limitEndpoint(5, "trackedChannels") {
 		var channels []twitch.Data
-		chains := markov.Chains()
+		chains := markov.CurrentChains()
+		log.Println(chains)
 		for _, d := range twitch.Broadcasters {
 			for _, chain := range chains {
 				if d.Login == chain {
@@ -175,14 +176,6 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 						MarkovSentence: "",
 						Error:          "There was a problem on our side...",
 					}
-
-					m := platform.Message{
-						Platform:    "api",
-						ChannelName: channel,
-						Content:     output,
-					}
-
-					in <- m
 				} else {
 					apiResponse = APIResponse{
 						ModeUsed:       method,

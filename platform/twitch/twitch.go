@@ -31,7 +31,7 @@ func Start(in chan platform.Message) {
 
 	for _, directive := range global.Directives {
 		client.Join(directive.ChannelName)
-		log.Println("Joined", directive.ChannelName)
+		//log.Println("Joined", directive.ChannelName)
 	}
 
 	err := client.Connect()

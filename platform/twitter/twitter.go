@@ -44,7 +44,7 @@ func SendTweet(channel string, message string) {
 		}
 	}
 
-	message = fmt.Sprintf("%s\n\n#%sChatSays\n#ShitTwitchChatSays", channel, message)
+	message = fmt.Sprintf("%s\n\n#%sChatSays\n#ShitTwitchChatSays", message, channel)
 
 	log.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
 

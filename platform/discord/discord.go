@@ -216,7 +216,12 @@ func manuallyTweet(r *discordgo.MessageReactionAdd) {
 	var message string
 
 	// If message was sent by bot
-	if messageInfo, _ := discord.ChannelMessage(r.ChannelID, r.MessageID); messageInfo.Author.ID != global.DiscordBotID {
+	messageInfo, err := discord.ChannelMessage(r.ChannelID, r.MessageID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if messageInfo.Author.ID != global.DiscordBotID {
 		return
 	}
 

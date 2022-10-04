@@ -32,14 +32,14 @@ func MsgHandler(c chan platform.Message) {
 			if passed {
 				go markov.Input(msg.ChannelName, newMessage)
 				go warden("message", msg.ChannelName, msg.Content)
-				go SendBackOutput(msg)
 			}
 			continue
 		} else if msg.Platform == "discord" {
 			go commands.AdminCommands(msg)
 			continue
 		} else if msg.Platform == "api" {
-			go handleSuccessfulOutput(msg.ChannelName, msg.Content)
+			log.Println("api print request")
+			outputHandler("api", msg.ChannelName, msg.Content)
 			continue
 		}
 	}
@@ -47,48 +47,51 @@ func MsgHandler(c chan platform.Message) {
 
 func outputTicker() {
 	for range time.Tick(2 * time.Minute) {
-		chains := markov.Chains()
+		chains := markov.CurrentChains()
 		for _, chain := range chains {
-			warden("ticker", chain, "")
+			log.Println("outputTicker for", chain)
+			go warden("ticker", chain, "")
 		}
 	}
 }
 
 func warden(origin string, channel string, message string) {
-	if !lockChannel(30, channel) {
-		return
-	}
+	if origin == "message" {
+		if !lockResponse(global.RandomNumber(30, 180), channel) {
+			return
+		}
 
-	c := make(chan string)
-	go guard(origin, channel, message, c)
-	r := <-c
-	if r == "" {
-		return
+		go responseGuard(channel, message)
 	} else {
-		handleSuccessfulOutput(channel, r)
+		if !lockChannel(30, channel) {
+			return
+		}
+
+		c := make(chan string)
+		go discordGuard(channel, message, c)
+		r := <-c
+
+		if r == "" {
+			return
+		} else {
+			outputHandler("discordGuard", channel, r)
+		}
 	}
 }
 
-func guard(origin string, channel string, message string, c chan string) {
+func discordGuard(channel string, message string, c chan string) {
 	oi := markov.OutputInstructions{
-		Chain: channel,
-	}
-
-	if origin == "message" {
-		s := strings.Split(message, " ")
-		m := global.PickRandomFromSlice(s)
-
-		oi.Method = "TargetedBeginning"
-		oi.Target = m
-	} else if origin == "ticker" || origin == "api" {
-		oi.Method = "LikelyBeginning"
+		Chain:  channel,
+		Method: "LikelyBeginning",
 	}
 
 	output, problem := markov.Output(oi)
 
+	log.Println(output, problem)
+
 	if problem == "" {
 		if !RandomlyPickLongerSentences(output) {
-			recurse(origin, channel, message, c)
+			recurse(channel, message, c)
 			return
 		} else {
 			c <- output
@@ -96,12 +99,12 @@ func guard(origin string, channel string, message string, c chan string) {
 			return
 		}
 	} else {
-		recurse(origin, channel, message, c)
+		recurse(channel, message, c)
 		return
 	}
 }
 
-func recurse(origin string, channel string, message string, c chan string) {
+func recurse(channel string, message string, c chan string) {
 	recursionsMx.Lock()
 	recursions[channel] += 1
 	if recursions[channel] > 10 {
@@ -109,27 +112,17 @@ func recurse(origin string, channel string, message string, c chan string) {
 		recursionsMx.Unlock()
 		c <- ""
 		close(c)
+		return
 	} else {
 		recursionsMx.Unlock()
-		go guard(origin, channel, message, c)
+		go discordGuard(channel, message, c)
+		return
 	}
 }
 
-func handleSuccessfulOutput(channel string, message string) {
-	str := "Channel: " + channel + "\nMessage: " + message
-	discord.Say("all", str)
-	discord.Say(channel, message)
-
-	if global.Regex.MatchString(message) {
-		discord.Say("quarantine", message)
-	} else {
-		twitter.AddMessageToPotentialTweets(channel, message)
-	}
-}
-
-func SendBackOutput(msg platform.Message) {
+func responseGuard(channel string, message string) {
 	for _, directive := range global.Directives {
-		if directive.ChannelName == msg.ChannelName {
+		if directive.ChannelName == channel {
 			onlineEnabled := directive.Settings.IsOnlineEnabled
 			offlineEnabled := directive.Settings.IsOfflineEnabled
 			random := directive.Settings.IsOptedIn
@@ -139,10 +132,6 @@ func SendBackOutput(msg platform.Message) {
 			twitch.IsLiveMx.Unlock()
 
 			if (live && onlineEnabled) || (!live && offlineEnabled) {
-				if !lockResponse(global.RandomNumber(30, 180), directive.ChannelName) {
-					return
-				}
-
 				log.Println("Response activated in", directive.ChannelName)
 
 				chainToUse := directive.ChannelName
@@ -154,10 +143,10 @@ func SendBackOutput(msg platform.Message) {
 				log.Println("Random opted:", random)
 				log.Println("Chain to use:", chainToUse)
 
-				s := strings.Split(msg.Content, " ")
+				s := strings.Split(message, " ")
 				t := global.PickRandomFromSlice(s)
 
-				log.Println("Message used:", msg.Content)
+				log.Println("Message used:", message)
 				log.Println("Target chosen:", t)
 
 				oi := markov.OutputInstructions{
@@ -171,19 +160,26 @@ func SendBackOutput(msg platform.Message) {
 					log.Println("Problem found:", problem)
 					discord.Say("error-tracking", problem)
 				} else {
+					outputHandler("responseGuard", channel, output)
 					log.Println("Response to use:", output)
-					discord.Say("all", output)
-					discord.Say(chainToUse, output)
-
-					if global.Regex.MatchString(output) {
-						discord.Say("quarantine", output)
-					} else {
-						twitter.AddMessageToPotentialTweets(chainToUse, output)
-						twitch.Say(directive.ChannelName, output)
-					}
 				}
 				return
 			}
+		}
+	}
+}
+
+func outputHandler(origin string, channel string, message string) {
+	str := "Channel: " + channel + "\nMessage: " + message
+	discord.Say("all", str)
+	discord.Say(channel, message)
+
+	if global.Regex.MatchString(message) {
+		discord.Say("quarantine", message)
+	} else {
+		twitter.AddMessageToPotentialTweets(channel, message)
+		if origin == "responseGuard" {
+			twitch.Say(channel, message)
 		}
 	}
 }

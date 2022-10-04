@@ -215,7 +215,7 @@ func GetRandomChannel(channel string) (randomChannel string) {
 
 	var s []string
 
-	chains := markov.Chains()
+	chains := markov.CurrentChains()
 	for _, chain := range chains {
 		if chain == channel {
 			continue
