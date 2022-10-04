@@ -1,12 +1,12 @@
 package twitch
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/terminal"
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"markov-generator/global"
+	"markov-generator/terminal"
 	"net/http"
 )
 

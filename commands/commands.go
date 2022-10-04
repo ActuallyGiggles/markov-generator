@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform"
+	"markov-generator/global"
+	"markov-generator/platform"
 	"strings"
 )
 

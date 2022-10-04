@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"MarkovGenerator/markov"
+	"markov-generator/markov"
 )
 
 type Terminal struct {

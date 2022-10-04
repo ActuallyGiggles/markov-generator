@@ -1,8 +1,8 @@
 package twitch
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/terminal"
+	"markov-generator/global"
+	"markov-generator/terminal"
 	"sync"
 )
 

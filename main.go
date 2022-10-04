@@ -1,17 +1,17 @@
 package main
 
 import (
-	"MarkovGenerator/api"
-	"MarkovGenerator/global"
-	"MarkovGenerator/handler"
-	"MarkovGenerator/markov"
-	"MarkovGenerator/platform"
-	"MarkovGenerator/platform/discord"
-	"MarkovGenerator/platform/twitch"
-	"MarkovGenerator/platform/twitter"
-	"MarkovGenerator/terminal"
 	"io"
 	"log"
+	"markov-generator/api"
+	"markov-generator/global"
+	"markov-generator/handler"
+	"markov-generator/markov"
+	"markov-generator/platform"
+	"markov-generator/platform/discord"
+	"markov-generator/platform/twitch"
+	"markov-generator/platform/twitter"
+	"markov-generator/terminal"
 	"sync"
 
 	"os"

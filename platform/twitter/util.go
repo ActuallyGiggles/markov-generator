@@ -1,6 +1,6 @@
 package twitter
 
-import "MarkovGenerator/global"
+import "markov-generator/global"
 
 func PickRandomFromMap(potentialTweets map[string]string) (string, string, bool) {
 	// Get slice of channels in map

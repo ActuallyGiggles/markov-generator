@@ -1,8 +1,8 @@
 package discord
 
 import (
-	"MarkovGenerator/global"
 	"log"
+	"markov-generator/global"
 	"strconv"
 	"strings"
 

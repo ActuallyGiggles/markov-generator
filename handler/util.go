@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/markov"
-	"MarkovGenerator/platform"
+	"markov-generator/global"
+	"markov-generator/markov"
+	"markov-generator/platform"
 	"regexp"
 	"strings"
 	"time"

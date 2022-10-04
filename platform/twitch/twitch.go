@@ -1,9 +1,9 @@
 package twitch
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform"
 	"log"
+	"markov-generator/global"
+	"markov-generator/platform"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )

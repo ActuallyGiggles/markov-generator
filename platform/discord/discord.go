@@ -1,10 +1,10 @@
 package discord
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform"
-	"MarkovGenerator/platform/twitter"
 	"log"
+	"markov-generator/global"
+	"markov-generator/platform"
+	"markov-generator/platform/twitter"
 	"sync"
 
 	"strings"

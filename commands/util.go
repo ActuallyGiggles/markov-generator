@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform/discord"
-	"MarkovGenerator/platform/twitch"
 	"log"
+	"markov-generator/global"
+	"markov-generator/platform/discord"
+	"markov-generator/platform/twitch"
 	"strings"
 )
 

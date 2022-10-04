@@ -1,9 +1,9 @@
 package api
 
 import (
-	"MarkovGenerator/handler"
-	"MarkovGenerator/markov"
 	"fmt"
+	"markov-generator/handler"
+	"markov-generator/markov"
 	"sync"
 	"time"
 )

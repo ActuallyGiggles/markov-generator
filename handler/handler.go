@@ -1,18 +1,18 @@
 package handler
 
 import (
-	"MarkovGenerator/commands"
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform"
-	"MarkovGenerator/platform/discord"
-	"MarkovGenerator/platform/twitch"
-	"MarkovGenerator/platform/twitter"
 	"log"
+	"markov-generator/commands"
+	"markov-generator/global"
+	"markov-generator/platform"
+	"markov-generator/platform/discord"
+	"markov-generator/platform/twitch"
+	"markov-generator/platform/twitter"
 	"strings"
 	"sync"
 	"time"
 
-	"MarkovGenerator/markov"
+	"markov-generator/markov"
 )
 
 var (

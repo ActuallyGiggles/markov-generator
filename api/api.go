@@ -1,15 +1,15 @@
 package api
 
 import (
-	"MarkovGenerator/global"
-	"MarkovGenerator/platform"
-	"MarkovGenerator/platform/twitch"
 	"encoding/json"
 	"log"
+	"markov-generator/global"
+	"markov-generator/platform"
+	"markov-generator/platform/twitch"
 	"net/http"
 	"strings"
 
-	"MarkovGenerator/markov"
+	"markov-generator/markov"
 
 	"github.com/rs/cors"
 )
