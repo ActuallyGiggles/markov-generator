@@ -48,7 +48,6 @@ func outputTicker() {
 	for range time.Tick(2 * time.Minute) {
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
-			log.Println("outputTicker for", chain)
 			go warden("ticker", chain, "")
 		}
 	}

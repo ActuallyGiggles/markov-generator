@@ -11,6 +11,7 @@ import (
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
 	"markov-generator/platform/twitter"
+	"markov-generator/terminal"
 	"sync"
 
 	"os"
@@ -78,5 +79,5 @@ func Start() {
 
 	go twitch.Start(c)
 
-	//terminal.UpdateTerminal("init")
+	terminal.UpdateTerminal("init")
 }
