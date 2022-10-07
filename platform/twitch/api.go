@@ -59,7 +59,7 @@ func getBroadcasterIDs() (err error) {
 
 	for _, channel := range global.Directives {
 		data, err := GetBroadcasterInfo(channel.ChannelName)
-		if err != nil {
+		if err == nil {
 			temp[channel.ChannelName] = data
 		} else {
 			return err

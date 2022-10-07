@@ -63,7 +63,6 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 	if limitEndpoint(5, "trackedChannels") {
 		var channels []twitch.Data
 		chains := markov.CurrentChains()
-		log.Println(chains)
 		for _, d := range twitch.Broadcasters {
 			for _, chain := range chains {
 				if d.Login == chain {
