@@ -163,7 +163,7 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 				ChannelUsed:    channel,
 				MessageUsed:    target,
 				MarkovSentence: "",
-				Error:          strings.Title(channel) + " is not being tracked!",
+				Error:          channel + " is not being tracked!",
 			}
 		} else {
 			if lockChannel(.5, channel) {
@@ -232,8 +232,8 @@ func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
 		response.Error = "Channel is blank! Append ?channel=[channelname] to the url."
 	}
 
-	d, ok := twitch.GetBroadcasterInfo(channel)
-	if !ok {
+	d, err := twitch.GetBroadcasterInfo(channel)
+	if err != nil {
 		response.Error = "Something went wrong... Is this a real user? Are they banned?"
 	} else {
 		response.ID = d.ID

@@ -38,8 +38,7 @@ func MsgHandler(c chan platform.Message) {
 			go commands.AdminCommands(msg)
 			continue
 		} else if msg.Platform == "api" {
-			log.Println("api print request")
-			outputHandler("api", msg.ChannelName, msg.Content)
+			go outputHandler("api", msg.ChannelName, msg.Content)
 			continue
 		}
 	}
@@ -86,8 +85,6 @@ func discordGuard(channel string, message string, c chan string) {
 	}
 
 	output, problem := markov.Output(oi)
-
-	log.Println(output, problem)
 
 	if problem == "" {
 		if !RandomlyPickLongerSentences(output) {
@@ -170,12 +167,16 @@ func responseGuard(channel string, message string) {
 }
 
 func outputHandler(origin string, channel string, message string) {
+	if origin == "api" {
+		log.Println("api output triggered", channel, message)
+		defer log.Println("api output finished", channel, message)
+	}
 	str := "Channel: " + channel + "\nMessage: " + message
 	discord.Say("all", str)
 	discord.Say(channel, message)
 
 	if global.Regex.MatchString(message) {
-		discord.Say("quarantine", message)
+		discord.Say("quarantine", str)
 	} else {
 		twitter.AddMessageToPotentialTweets(channel, message)
 		if origin == "responseGuard" {

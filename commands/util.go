@@ -51,11 +51,16 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 
 	global.Directives = append(global.Directives, channel)
 
-	go twitch.GetLiveStatuses()
-	go twitch.GetEmoteController()
-	twitch.Join(channelName)
-
-	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" added successfully.")
+	go discord.SayByID(returnChannelID, "Gathering emotes for "+channelName)
+	twitch.GetLiveStatuses()
+	ok := twitch.GetEmoteController(false)
+	if ok {
+		twitch.Join(channelName)
+		go discord.SayByID(returnChannelID, channelName+" added successfully.")
+	} else {
+		go discord.SayByID(returnChannelID, "Could not retrieve "+channelName+"'s emotes...")
+		discord.DeleteDiscordChannel(channelName)
+	}
 }
 
 func updateDirective(returnChannelID string, messageID string, args []string) {
@@ -210,8 +215,8 @@ func findSettings(mode string, args []string) (connected bool, online bool, offl
 func findChannelIDs(mode string, platform string, channelName string, returnChannelID string) (platformChannelID string, discordChannelID string, success bool) {
 	if mode == "add" {
 		if platform == "twitch" {
-			c, ok := twitch.GetBroadcasterInfo(channelName)
-			if !ok {
+			c, err := twitch.GetBroadcasterInfo(channelName)
+			if err != nil {
 				go discord.SayByIDAndDelete(returnChannelID, "Is this a real twitch channel?")
 				return "", "", false
 			}

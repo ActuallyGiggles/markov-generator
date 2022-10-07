@@ -65,11 +65,7 @@ func warden(channel string) (output string) {
 	c := make(chan string)
 	go guard(channel, c)
 	r := <-c
-	if r == "" {
-		return
-	} else {
-		return r
-	}
+	return r
 }
 
 func guard(channel string, c chan string) {

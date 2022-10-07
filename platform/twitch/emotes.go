@@ -1,6 +1,7 @@
 package twitch
 
 import (
+	"log"
 	"markov-generator/global"
 	"markov-generator/terminal"
 	"sync"
@@ -13,7 +14,7 @@ var (
 	thirdPartyChannelEmotesToUpdateMx sync.Mutex
 )
 
-func GetEmoteController() {
+func GetEmoteController(isInit bool) (ok bool) {
 	broadcastersMx.Lock()
 	thirdPartyChannelEmotesToUpdateMx.Lock()
 	defer broadcastersMx.Unlock()
@@ -21,7 +22,7 @@ func GetEmoteController() {
 	Broadcasters = make(map[string]Data)
 	thirdPartyChannelEmotesToUpdate = make(map[string][]global.Emote)
 
-	if !didInitializationHappen {
+	if isInit {
 		global.ChannelEmotesMx.Lock()
 		defer global.ChannelEmotesMx.Unlock()
 		getBroadcasterIDs()
@@ -35,18 +36,33 @@ func GetEmoteController() {
 		getFfzChannelEmotes()
 		cleanAndTransferChannelEmotes()
 	} else {
-		getBroadcasterIDs()
-		get7tvChannelEmotes()
-		getBttvChannelEmotes()
-		getFfzChannelEmotes()
+		err := getBroadcasterIDs()
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		err = get7tvChannelEmotes()
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		err = getBttvChannelEmotes()
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		err = getFfzChannelEmotes()
+		if err != nil {
+			log.Println(err)
+			return false
+		}
 		global.ChannelEmotesMx.Lock()
 		defer global.ChannelEmotesMx.Unlock()
 		cleanAndTransferChannelEmotes()
 	}
 
-	didInitializationHappen = true
-
 	terminal.UpdateTerminal("emotes")
+	return true
 }
 
 func cleanAndTransferChannelEmotes() {

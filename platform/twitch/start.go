@@ -7,16 +7,14 @@ import (
 )
 
 var (
-	didInitializationHappen = false
-	IsLive                  = make(map[string]bool)
-	IsLiveMx                sync.Mutex
+	IsLive   = make(map[string]bool)
+	IsLiveMx sync.Mutex
 )
 
 func GatherEmotes() {
 	log.Println("Gathering emotes")
 	GetLiveStatuses()
-	GetEmoteController()
-	didInitializationHappen = true
+	GetEmoteController(true)
 	log.Println("Emotes gathered")
 	go updateLiveStatuses()
 	go refreshEmotes()
@@ -31,6 +29,6 @@ func updateLiveStatuses() {
 
 func refreshEmotes() {
 	for range time.Tick(10 * time.Minute) {
-		GetEmoteController()
+		GetEmoteController(false)
 	}
 }
