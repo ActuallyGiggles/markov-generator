@@ -73,6 +73,7 @@ func SayByID(channelId string, message string) (id *discordgo.Message) {
 	m, err := discord.ChannelMessageSend(channelId, wrapInCodeBlock(message))
 	if err != nil {
 		log.Println("	SayById failed \n", err)
+		return
 	}
 	return m
 }

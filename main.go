@@ -71,6 +71,7 @@ func Start() {
 		IntervalUnit:  "minutes",
 		StartKey:      "b5G(n1$I!4g",
 		EndKey:        "e1$D(n7",
+		Debug:         false,
 	}
 	markov.Start(i)
 	log.Println("Markov started")
