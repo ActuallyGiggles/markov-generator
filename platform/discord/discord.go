@@ -83,7 +83,7 @@ func Say(channel string, message string) {
 		if k == channel {
 			_, err := discord.ChannelMessageSend(v, wrapInCodeBlock(message))
 			if err != nil {
-				log.Println("	Say failed \n", err)
+				log.Println("Say failed \n", err)
 			}
 		}
 	}

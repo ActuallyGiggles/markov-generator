@@ -3,6 +3,7 @@ package global
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -50,4 +51,10 @@ func RandomNumber(min int, max int) (num int) {
 
 func PickRandomFromSlice(slice []string) string {
 	return slice[RandomNumber(0, len(slice))]
+}
+
+func RecoverFullName(functionName string) {
+	if r := recover(); r != nil {
+		log.Println("recovered '"+functionName+"' from ", r)
+	}
 }
