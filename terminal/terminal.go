@@ -70,20 +70,30 @@ func refreshTerminal() {
 		fmt.Println()
 		pi := markov.PeakIntake()
 		fmt.Println("\tPeak intake:  ", pi.Amount, pi.Time.Format("15:04:05"))
-		fmt.Println("\tNext write in:", markov.TimeUntilWrite())
 
-		for i := 0; i < len(workers); i += 3 {
+		if mode := markov.WriteMode(); mode == "ticker" {
+			fmt.Println("\tNext write in:", markov.TimeUntilWrite())
+		} else {
+			fmt.Printf("\tCurrent Intake: %.0f%%/%d%% (%d/%d)\n", float32(markov.CurrentCount)/float32(markov.WriteCountLimit)*100, 100, markov.CurrentCount, markov.WriteCountLimit)
+		}
+
+		for i := 0; i < len(workers); i += 4 {
 			worker := workers[i]
-			fmt.Printf("\t  %-20s\t%04d\t%-5s | ", worker.ChainResponsibleFor, worker.Intake, worker.Status)
+			fmt.Printf("\t  %-20s\t%04d\t%-8s |   ", worker.ChainResponsibleFor, worker.Intake, worker.Status)
 
 			if exists := doesSliceContainIndex(workers, i+1); exists {
 				worker2 := workers[i+1]
-				fmt.Printf("%-20s\t%04d\t%-5s | ", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
+				fmt.Printf("%-20s\t%04d\t%-8s |   ", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
 			}
 
 			if exists := doesSliceContainIndex(workers, i+2); exists {
 				worker3 := workers[i+2]
-				fmt.Printf("%-20s\t%04d\t%-5s", worker3.ChainResponsibleFor, worker3.Intake, worker3.Status)
+				fmt.Printf("%-20s\t%04d\t%-8s |   ", worker3.ChainResponsibleFor, worker3.Intake, worker3.Status)
+			}
+
+			if exists := doesSliceContainIndex(workers, i+3); exists {
+				worker4 := workers[i+3]
+				fmt.Printf("%-20s\t%04d\t%-8s", worker4.ChainResponsibleFor, worker4.Intake, worker4.Status)
 			}
 
 			fmt.Println()

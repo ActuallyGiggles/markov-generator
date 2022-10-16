@@ -1,7 +1,6 @@
 package twitch
 
 import (
-	"fmt"
 	"log"
 	"markov-generator/global"
 	"markov-generator/terminal"
@@ -26,7 +25,6 @@ func GetEmoteController(isInit bool) (ok bool) {
 	if isInit {
 		global.ChannelEmotesMx.Lock()
 		defer global.ChannelEmotesMx.Unlock()
-		fmt.Println("is init going :)")
 		getBroadcasterIDs()
 		getTwitchGlobalEmotes()
 		getTwitchChannelEmotes()

@@ -46,7 +46,8 @@ func outputTicker() {
 	for range time.Tick(5 * time.Minute) {
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
-			go discordWarden(chain)
+			time.Sleep(5 * time.Second)
+			discordWarden(chain)
 		}
 	}
 }
@@ -55,7 +56,7 @@ func discordWarden(channel string) {
 	if !lockChannel(60, channel) {
 		return
 	}
-	discordGuard(channel)
+	go discordGuard(channel)
 	return
 }
 
@@ -71,7 +72,7 @@ func discordGuard(channel string) {
 		if !RandomlyPickLongerSentences(output) {
 			recurse(channel)
 		} else {
-			//log.Println(channel + ": " + output)
+			log.Println(channel + ": " + output)
 			OutputHandler("discordWarden", channel, output)
 		}
 	} else {
