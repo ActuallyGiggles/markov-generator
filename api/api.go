@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"markov-generator/global"
+	"markov-generator/handler"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
 	"net/http"
@@ -184,13 +185,7 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 						Error:          "",
 					}
 
-					m := platform.Message{
-						Platform:    "api",
-						ChannelName: channel,
-						Content:     output,
-					}
-
-					in <- m
+					handler.OutputHandler("api", channel, output)
 				}
 			} else {
 				apiResponse = APIResponse{
@@ -252,8 +247,7 @@ func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func HandleRequests(c chan platform.Message) {
-	in = c
+func HandleRequests() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", homePage)
 	mux.HandleFunc("/tracked-channels", trackedChannels)

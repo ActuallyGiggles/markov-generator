@@ -73,7 +73,7 @@ func Start() {
 	markov.Start(i)
 	log.Println("Markov started")
 
-	go api.HandleRequests(c)
+	go api.HandleRequests()
 
 	go twitch.Start(c)
 

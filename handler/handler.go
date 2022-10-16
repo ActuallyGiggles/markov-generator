@@ -31,53 +31,35 @@ func MsgHandler(c chan platform.Message) {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
 				go markov.Input(msg.ChannelName, newMessage)
-				go warden("message", msg.ChannelName, msg.Content)
+				go responseWarden(msg.ChannelName, msg.Content)
+				go discordWarden(msg.ChannelName)
 			}
 			continue
 		} else if msg.Platform == "discord" {
 			go commands.AdminCommands(msg)
-			continue
-		} else if msg.Platform == "api" {
-			go outputHandler("api", msg.ChannelName, msg.Content)
 			continue
 		}
 	}
 }
 
 func outputTicker() {
-	for range time.Tick(2 * time.Minute) {
+	for range time.Tick(5 * time.Minute) {
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
-			go warden("ticker", chain, "")
+			go discordWarden(chain)
 		}
 	}
 }
 
-func warden(origin string, channel string, message string) {
-	if origin == "message" {
-		if !lockResponse(global.RandomNumber(30, 180), channel) {
-			return
-		}
-
-		go responseGuard(channel, message)
-	} else {
-		if !lockChannel(30, channel) {
-			return
-		}
-
-		c := make(chan string)
-		go discordGuard(channel, message, c)
-		r := <-c
-
-		if r == "" {
-			return
-		} else {
-			outputHandler("discordGuard", channel, r)
-		}
+func discordWarden(channel string) {
+	if !lockChannel(60, channel) {
+		return
 	}
+	discordGuard(channel)
+	return
 }
 
-func discordGuard(channel string, message string, c chan string) {
+func discordGuard(channel string) {
 	oi := markov.OutputInstructions{
 		Chain:  channel,
 		Method: "LikelyBeginning",
@@ -87,36 +69,31 @@ func discordGuard(channel string, message string, c chan string) {
 
 	if problem == "" {
 		if !RandomlyPickLongerSentences(output) {
-			recurse(channel, message, c)
-			return
+			recurse(channel)
 		} else {
-			c <- output
-			close(c)
-			return
+			//log.Println(channel + ": " + output)
+			OutputHandler("discordWarden", channel, output)
 		}
 	} else {
-		recurse(channel, message, c)
-		return
+		recurse(channel)
 	}
+	return
 }
 
-func recurse(channel string, message string, c chan string) {
+func recurse(channel string) {
 	recursionsMx.Lock()
 	recursions[channel] += 1
-	if recursions[channel] > 10 {
+	if recursions[channel] > 5 {
 		recursions[channel] = 0
 		recursionsMx.Unlock()
-		c <- ""
-		close(c)
-		return
 	} else {
 		recursionsMx.Unlock()
-		go discordGuard(channel, message, c)
-		return
+		go discordGuard(channel)
 	}
+	return
 }
 
-func responseGuard(channel string, message string) {
+func responseWarden(channel string, message string) {
 	for _, directive := range global.Directives {
 		if directive.ChannelName == channel {
 			onlineEnabled := directive.Settings.IsOnlineEnabled
@@ -128,6 +105,10 @@ func responseGuard(channel string, message string) {
 			twitch.IsLiveMx.Unlock()
 
 			if (live && onlineEnabled) || (!live && offlineEnabled) {
+				if !lockResponse(global.RandomNumber(30, 180), channel) {
+					return
+				}
+
 				log.Println("Response activated in", directive.ChannelName)
 
 				chainToUse := directive.ChannelName
@@ -156,8 +137,8 @@ func responseGuard(channel string, message string) {
 					log.Println("Problem found:", problem)
 					discord.Say("error-tracking", problem)
 				} else {
-					outputHandler("responseGuard", channel, output)
 					log.Println("Response to use:", output)
+					OutputHandler("responseGuard", channel, output)
 				}
 				return
 			}
@@ -165,11 +146,12 @@ func responseGuard(channel string, message string) {
 	}
 }
 
-func outputHandler(origin string, channel string, message string) {
+func OutputHandler(origin string, channel string, message string) {
 	if origin == "api" {
 		log.Println("api output triggered", channel, message)
 		defer log.Println("api output finished", channel, message)
 	}
+
 	str := "Channel: " + channel + "\nMessage: " + message
 	discord.Say("all", str)
 	discord.Say(channel, message)
@@ -182,4 +164,5 @@ func outputHandler(origin string, channel string, message string) {
 			twitch.Say(channel, message)
 		}
 	}
+	return
 }
