@@ -1,6 +1,7 @@
 package markov
 
 import (
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -143,6 +144,8 @@ func (w *worker) writeToChain() {
 
 	w.ChainToWriteMx.Unlock()
 	debugLog("writeToChain unlocks", w.ChainResponsibleFor)
+
+	debug.FreeOSMemory()
 }
 
 // WorkersStats returns a slice of type WorkerStats

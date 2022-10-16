@@ -31,8 +31,8 @@ func MsgHandler(c chan platform.Message) {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
 				go markov.Input(msg.ChannelName, newMessage)
-				//go responseWarden(msg.ChannelName, msg.Content)
-				//go discordWarden(msg.ChannelName)
+				go responseWarden(msg.ChannelName, msg.Content)
+				go discordWarden(msg.ChannelName)
 			}
 			continue
 		} else if msg.Platform == "discord" {
