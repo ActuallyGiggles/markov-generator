@@ -8,6 +8,7 @@ import (
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 
 	"markov-generator/markov"

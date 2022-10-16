@@ -51,7 +51,7 @@ func UpdateTerminal(mode string) {
 }
 
 func refreshTerminal() {
-	for range time.Tick(5 * time.Second) {
+	for range time.Tick(1 * time.Second) {
 		cmd := exec.Command("cmd", "/c", "cls")
 		cmd.Stdout = os.Stdout
 		cmd.Run()
@@ -68,8 +68,8 @@ func refreshTerminal() {
 		})
 
 		fmt.Println()
-		pi := markov.PeakIntake()
-		fmt.Println("\tPeak intake:  ", pi.Amount, pi.Time.Format("15:04:05"))
+		pi := markov.ChainPeakIntake()
+		fmt.Println("\tChain peak intake:", pi.Chain+",", pi.Amount, pi.Time.Format("15:04:05"))
 
 		if mode := markov.WriteMode(); mode == "ticker" {
 			fmt.Println("\tNext write in:", markov.TimeUntilWrite())
