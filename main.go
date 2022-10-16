@@ -64,7 +64,7 @@ func Start() {
 		WriteMode: "counter",
 		// WriteInterval: 10,
 		// IntervalUnit:  "minutes",
-		WriteLimit: 100,
+		WriteLimit: 10000,
 		StartKey:   "b5G(n1$I!4g",
 		EndKey:     "e1$D(n7",
 		Debug:      true,

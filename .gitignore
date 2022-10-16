@@ -22,4 +22,4 @@ mem.pprof
 # vendor/
 .history/
 .sync/
-/markov/
+/markov/chains/
