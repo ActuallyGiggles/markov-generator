@@ -1,6 +1,8 @@
 package markov
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,6 +21,16 @@ func debugLog(v ...any) {
 	}
 }
 
+func GetBytes(key interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 func jsonToChain(path string) (chain map[string]map[string]map[string]int, exists bool) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -27,17 +39,17 @@ func jsonToChain(path string) (chain map[string]map[string]map[string]int, exist
 	}
 	defer file.Close()
 
-	/*content, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Println("jsonToChain error: ", path, "\n", err)
-		return nil, false
-	}
+	// /*content, err := ioutil.ReadAll(file)
+	// if err != nil {
+	// 	log.Println("jsonToChain error: ", path, "\n", err)
+	// 	return nil, false
+	// }
 
-	err = json.Unmarshal(content, &chain)
-	if err != nil {
-		log.Println("Error when unmarshalling file:", path, "\n", err)
-		return nil, false
-	}*/
+	// err = json.Unmarshal(content, &chain)
+	// if err != nil {
+	// 	log.Println("Error when unmarshalling file:", path, "\n", err)
+	// 	return nil, false
+	// }*/
 
 	err = json.NewDecoder(file).Decode(&chain)
 	if err != nil {
@@ -49,26 +61,35 @@ func jsonToChain(path string) (chain map[string]map[string]map[string]int, exist
 }
 
 func chainToJson(chain map[string]map[string]map[string]int, path string) {
-	file, _ := json.MarshalIndent(chain, "", " ")
-	_ = ioutil.WriteFile(path, file, 0644)
+	byteArray, err := GetBytes(chain)
+	if err != nil {
+		log.Panic(err)
+	}
+	err = os.WriteFile("file.txt", byteArray, 0644)
+	if err != nil {
+		log.Panic(err)
+	}
 
-	// chainData, err := json.MarshalIndent(chain, "", " ")
-	// if err != nil {
-	// 	debugLog("ERROR MARSHALLING ", path)
-	// }
+	// file, _ := json.MarshalIndent(chain, "", " ")
+	// _ = ioutil.WriteFile(path, file, 0644)
 
-	// f, err := os.Create(path)
-	// if err != nil {
-	// 	debugLog("ERROR CREATING ", path, err)
-	// }
+	/*chainData, err := json.MarshalIndent(chain, "", " ")
+	if err != nil {
+		debugLog("ERROR MARSHALLING ", path)
+	}
 
-	// n2, err := f.Write(chainData)
-	// f.Close()
-	// if err != nil {
-	// 	debugLog("ERROR WRITING ", path, err)
-	// }
+	f, err := os.Create(path)
+	if err != nil {
+		debugLog("ERROR CREATING ", path, err)
+	}
 
-	// debugLog("wrote", n2, "bytes to", path)
+	n2, err := f.Write(chainData)
+	f.Close()
+	if err != nil {
+		debugLog("ERROR WRITING ", path, err)
+	}
+
+	debugLog("wrote", n2, "bytes to", path)*/
 }
 
 // PrettyPrint prints out an object in a pretty format
