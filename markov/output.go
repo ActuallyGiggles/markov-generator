@@ -66,8 +66,11 @@ func likelyBeginning(i OutputInstructions, c chan result) {
 		Problem: "",
 	}
 
-	chain, exists := jsonToChain("./markov/chains/" + i.Chain + ".json")
-	if !exists {
+	workerMapMx.Lock()
+	worker, ok := workerMap[i.Chain]
+	workerMapMx.Unlock()
+
+	if !ok {
 		message.Output = ""
 		message.Problem = i.Chain + " does not exist."
 		c <- message
@@ -75,11 +78,26 @@ func likelyBeginning(i OutputInstructions, c chan result) {
 		return
 	}
 
+	worker.ChainToWriteMx.Lock()
+	worker.Status = "Outputting"
+	chain := worker.ChainToWrite
+	defer worker.ChainToWriteMx.Unlock()
+	defer func() { worker.Status = "Ready" }()
+
+	// chain, exists := jsonToChain("./markov/chains/" + i.Chain + ".json")
+	// if !exists {
+	// 	message.Output = ""
+	// 	message.Problem = i.Chain + " does not exist."
+	// 	c <- message
+	// 	close(c)
+	// 	return
+	// }
+
 	loopCounter := 0
 
 	for true {
 		loopCounter += 1
-		if loopCounter > 300 {
+		if loopCounter > 200 {
 			message.Output = strconv.Itoa(loopCounter)
 			message.Problem = i.Chain + " exceeded the loop counter."
 			c <- message
@@ -140,15 +158,23 @@ func targetedBeginning(i OutputInstructions, c chan result) {
 		Problem: "",
 	}
 
-	// Check if chain exists and get it back as json
-	chain, exists := jsonToChain("./markov/chains/" + i.Chain + ".json")
-	if !exists {
+	workerMapMx.Lock()
+	worker, ok := workerMap[i.Chain]
+	workerMapMx.Unlock()
+
+	if !ok {
 		message.Output = ""
 		message.Problem = i.Chain + " does not exist."
 		c <- message
 		close(c)
 		return
 	}
+
+	worker.ChainToWriteMx.Lock()
+	worker.Status = "Outputting"
+	chain := worker.ChainToWrite
+	defer worker.ChainToWriteMx.Unlock()
+	defer func() { worker.Status = "Ready" }()
 
 	options := make(map[string]int)
 
@@ -186,7 +212,7 @@ func targetedBeginning(i OutputInstructions, c chan result) {
 
 	for true {
 		loopCounter += 1
-		if loopCounter > 300 {
+		if loopCounter > 200 {
 			message.Output = strconv.Itoa(loopCounter)
 			message.Problem = i.Chain + " exceeded the loop counter."
 			c <- message

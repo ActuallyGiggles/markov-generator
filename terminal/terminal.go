@@ -51,7 +51,7 @@ func UpdateTerminal(mode string) {
 }
 
 func refreshTerminal() {
-	for range time.Tick(1 * time.Second) {
+	for range time.Tick(2 * time.Second) {
 		cmd := exec.Command("cmd", "/c", "cls")
 		cmd.Stdout = os.Stdout
 		cmd.Run()

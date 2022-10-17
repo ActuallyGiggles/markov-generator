@@ -15,15 +15,20 @@ var (
 
 func startWorkers() {
 	chains := chains()
+	debugLog("Creating workers")
 	for _, name := range chains {
 		newWorker(name)
 	}
+	debugLog("Created workers")
+	debug.FreeOSMemory()
 }
 
 func newWorker(name string) *worker {
+	chain, _ := jsonToChain("./markov/chains/" + name + ".json")
+
 	w := &worker{
 		ChainResponsibleFor: name,
-		ChainToWrite:        make(map[string]map[string]map[string]int),
+		ChainToWrite:        chain,
 	}
 
 	workerMapMx.Lock()
@@ -83,7 +88,7 @@ func writeLoop() {
 	defer debugLog("write loop done")
 	//writing := 0
 	for _, w := range workerMap {
-		if w.Intake == 0 || w.Status == "Writing" {
+		if w.Intake == 0 || w.Status != "Ready" {
 			continue
 		}
 
@@ -99,13 +104,13 @@ func writeLoop() {
 		// 	continue
 		// }
 
-		w.writeToChain()
+		w.writeChainToFile()
 
 		//writing += 1
 	}
 }
 
-func (w *worker) writeToChain() {
+func (w *worker) writeChainToFile() {
 	defer duration(track(w.ChainResponsibleFor))
 
 	w.ChainToWriteMx.Lock()
@@ -115,36 +120,14 @@ func (w *worker) writeToChain() {
 	w.LastModified = now()
 	path := "./markov/chains/" + w.ChainResponsibleFor + ".json"
 
-	existingChain, chainExists := jsonToChain(path)
-	if !chainExists {
-		existingChain = make(map[string]map[string]map[string]int)
-		debugLog("CHAIN CREATED FOR", w.ChainResponsibleFor)
-	}
+	chainToJson(w.ChainToWrite, path)
 
-	for currentParent, currentParentValue := range w.ChainToWrite {
-		if _, ok := existingChain[currentParent]; !ok {
-			existingChain[currentParent] = make(map[string]map[string]int)
-		}
-		for currentList, currentListValue := range currentParentValue {
-			if _, ok := existingChain[currentParent][currentList]; !ok {
-				existingChain[currentParent][currentList] = make(map[string]int)
-			}
-			for currentChild, currentTimesUsed := range currentListValue {
-				existingChain[currentParent][currentList][currentChild] += currentTimesUsed
-			}
-		}
-	}
-
-	chainToJson(existingChain, path)
-
-	w.ChainToWrite = make(map[string]map[string]map[string]int)
 	w.Intake = 0
 	w.Status = "Ready"
 	w.LastModified = now()
 
 	w.ChainToWriteMx.Unlock()
 	debugLog("writeToChain unlocks", w.ChainResponsibleFor)
-
 	debug.FreeOSMemory()
 }
 

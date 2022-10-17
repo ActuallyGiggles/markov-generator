@@ -49,26 +49,37 @@ func jsonToChain(path string) (chain map[string]map[string]map[string]int, exist
 }
 
 func chainToJson(chain map[string]map[string]map[string]int, path string) {
-	file, _ := json.MarshalIndent(chain, "", " ")
-	_ = ioutil.WriteFile(path, file, 0644)
+	// file, _ := json.MarshalIndent(chain, "", " ")
+	// _ = ioutil.WriteFile(path, file, 0644)
 
-	// chainData, err := json.MarshalIndent(chain, "", " ")
-	// if err != nil {
-	// 	debugLog("ERROR MARSHALLING ", path)
-	// }
+	chainData, err := json.MarshalIndent(chain, "", " ")
+	if err != nil {
+		debugLog("ERROR MARSHALLING ", path)
+	}
 
-	// f, err := os.Create(path)
-	// if err != nil {
-	// 	debugLog("ERROR CREATING ", path, err)
-	// }
+	f, err := os.Create(path)
+	if err != nil {
+		debugLog("ERROR CREATING ", path, err)
+	}
 
-	// n2, err := f.Write(chainData)
-	// f.Close()
-	// if err != nil {
-	// 	debugLog("ERROR WRITING ", path, err)
-	// }
+	fileStat, _ := f.Stat()
+	fileSize := fileStat.Size()
 
-	// debugLog("wrote", n2, "bytes to", path)
+	n2, err := f.Write(chainData)
+	f.Close()
+	if err != nil {
+		debugLog("ERROR WRITING ", path, err)
+	}
+
+	change := fileSize - int64(n2)
+
+	if change > 0 {
+		debugLog("wrote successfully to", path)
+		debugLog(fileSize, "-", int64(n2), "=", change)
+	} else {
+		debugLog("wrote unsuccessfully to", path)
+		debugLog(fileSize, "-", int64(n2), "=", change)
+	}
 }
 
 // PrettyPrint prints out an object in a pretty format

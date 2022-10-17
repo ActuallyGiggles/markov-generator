@@ -11,16 +11,19 @@ import (
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
 	"markov-generator/platform/twitter"
+	"markov-generator/terminal"
 	"sync"
 
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/pkg/profile"
 )
 
 func main() {
 	// Profiling
-	//defer profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook).Stop()
+	defer profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook).Stop()
 
 	// Logging
 	file, err := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -76,5 +79,5 @@ func Start() {
 
 	go twitch.Start(c)
 
-	//terminal.UpdateTerminal("init")
+	terminal.UpdateTerminal("init")
 }
