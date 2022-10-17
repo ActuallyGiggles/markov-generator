@@ -35,7 +35,7 @@ It accounts for any number of items and add start/end keys.
 
 Example:
 	Content: This is a test.
-	Result: [startKey], This is, is a, a test., [endKey]]
+	Result: [[startKey], This is, is a, a test., [endKey]]
 */
 func prepareContentForChainProcessing(content string) []string {
 	var returnSlice []string
