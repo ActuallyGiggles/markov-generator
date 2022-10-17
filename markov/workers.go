@@ -20,7 +20,6 @@ func startWorkers() {
 		newWorker(name)
 	}
 	debugLog("Created workers")
-	debug.FreeOSMemory()
 }
 
 func newWorker(name string) *worker {
@@ -38,6 +37,7 @@ func newWorker(name string) *worker {
 	w.Status = "Ready"
 	w.LastModified = now()
 	debugLog("Created worker:", name)
+	debug.FreeOSMemory()
 
 	return w
 }
@@ -105,6 +105,7 @@ func writeLoop() {
 		// }
 
 		w.writeChainToFile()
+		debug.FreeOSMemory()
 
 		//writing += 1
 	}
@@ -128,7 +129,6 @@ func (w *worker) writeChainToFile() {
 
 	w.ChainToWriteMx.Unlock()
 	debugLog("writeToChain unlocks", w.ChainResponsibleFor)
-	debug.FreeOSMemory()
 }
 
 // WorkersStats returns a slice of type WorkerStats

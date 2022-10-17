@@ -57,7 +57,7 @@ func chainToJson(chain map[string]map[string]map[string]int, path string) {
 		debugLog("ERROR MARSHALLING ", path)
 	}
 
-	f, err := os.Create(path)
+	f, err := os.Open(path)
 	if err != nil {
 		debugLog("ERROR CREATING ", path, err)
 	}
