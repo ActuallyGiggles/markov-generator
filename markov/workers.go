@@ -60,10 +60,12 @@ func distributor() {
 		workerMapMx.Unlock()
 		//debugLog("distributor unlocks", in.Chain)
 
-		if worker.Status == "Ready" {
-			if ok {
+		if ok {
+			if worker.Status == "Ready" {
 				go worker.addToQueue(in.Chain, in.Content)
-			} else {
+			}
+		} else {
+			if worker.Status == "Ready" {
 				worker = newWorker(in.Chain)
 				go worker.addToQueue(in.Chain, in.Content)
 			}
