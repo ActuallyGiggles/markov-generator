@@ -18,6 +18,7 @@ func startWorkers() {
 	debugLog("Creating workers")
 	for _, name := range chains {
 		newWorker(name)
+		debug.FreeOSMemory()
 	}
 	debugLog("Created workers")
 }
