@@ -3,9 +3,10 @@ package api
 import (
 	"fmt"
 	"markov-generator/handler"
-	"markov-generator/markov"
 	"sync"
 	"time"
+
+	"markov-generator/markov"
 )
 
 var (
@@ -73,9 +74,9 @@ func guard(channel string, c chan string) {
 		Chain:  channel,
 		Method: "LikelyBeginning",
 	}
-	output, problem := markov.Output(oi)
+	output, problem := markov.Out(oi)
 
-	if problem == "" {
+	if problem == nil {
 		if !handler.RandomlyPickLongerSentences(output) {
 			recurse(channel, output, c)
 			return

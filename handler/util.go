@@ -2,11 +2,12 @@ package handler
 
 import (
 	"markov-generator/global"
-	"markov-generator/markov"
 	"markov-generator/platform"
 	"regexp"
 	"strings"
 	"time"
+
+	"markov-generator/markov"
 )
 
 // prepareMessage prepares the message to be inputted into a Markov chain

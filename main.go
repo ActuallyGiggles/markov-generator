@@ -6,17 +6,19 @@ import (
 	"markov-generator/api"
 	"markov-generator/global"
 	"markov-generator/handler"
-	"markov-generator/markov"
 	"markov-generator/platform"
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
 	"markov-generator/platform/twitter"
 	"markov-generator/terminal"
+
 	"sync"
 
 	"os"
 	"os/signal"
 	"syscall"
+
+	"markov-generator/markov"
 
 	"github.com/pkg/profile"
 )
@@ -67,10 +69,10 @@ func Start() {
 		WriteMode: "counter",
 		// WriteInterval: 10,
 		// IntervalUnit:  "minutes",
-		WriteLimit: 10000,
+		WriteLimit: 1000,
 		StartKey:   "b5G(n1$I!4g",
 		EndKey:     "e1$D(n7",
-		Debug:      true,
+		Debug:      false,
 	}
 	markov.Start(i)
 	log.Println("Markov started")

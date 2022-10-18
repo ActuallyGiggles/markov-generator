@@ -25,12 +25,12 @@ var (
 )
 
 func MsgHandler(c chan platform.Message) {
-	//go outputTicker()
+	go outputTicker()
 	for msg := range c {
 		if msg.Platform == "twitch" {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
-				go markov.Input(msg.ChannelName, newMessage)
+				go markov.In(msg.ChannelName, newMessage)
 				go responseWarden(msg.ChannelName, msg.Content)
 				go discordWarden(msg.ChannelName)
 			}
@@ -66,9 +66,9 @@ func discordGuard(channel string) {
 		Method: "LikelyBeginning",
 	}
 
-	output, problem := markov.Output(oi)
+	output, problem := markov.Out(oi)
 
-	if problem == "" {
+	if problem == nil {
 		if !RandomlyPickLongerSentences(output) {
 			recurse(channel)
 		} else {
@@ -132,11 +132,11 @@ func responseWarden(channel string, message string) {
 					Chain:  chainToUse,
 					Target: t,
 				}
-				output, problem := markov.Output(oi)
+				output, problem := markov.Out(oi)
 
-				if problem != "" {
+				if problem == nil {
 					log.Println("Problem found:", problem)
-					discord.Say("error-tracking", problem)
+					discord.Say("error-tracking", problem.Error())
 				} else {
 					log.Println("Response to use:", output)
 					OutputHandler("responseGuard", channel, output)
