@@ -135,11 +135,11 @@ func responseWarden(channel string, message string) {
 				output, err := markov.Out(oi)
 
 				if err == nil {
-					log.Println(err)
-					discord.Say("error-tracking", err.Error())
-				} else {
 					log.Println("Response to use:", output)
 					OutputHandler("responseGuard", channel, output)
+				} else {
+					log.Println(err)
+					discord.Say("error-tracking", err.Error())
 				}
 				return
 			}
