@@ -19,11 +19,10 @@ type OutputInstructions struct {
 }
 
 type worker struct {
-	Name         string
-	Chain        chain
-	ChainMx      sync.Mutex
-	Intake       int
-	LastModified string
+	Name    string
+	Chain   chain
+	ChainMx sync.Mutex
+	Intake  int
 }
 
 type chain struct {
@@ -54,5 +53,4 @@ type wRand struct {
 type WorkerStats struct {
 	ChainResponsibleFor string
 	Intake              int
-	LastModified        string
 }
