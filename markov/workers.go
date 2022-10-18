@@ -1,6 +1,7 @@
 package markov
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -10,18 +11,10 @@ var (
 )
 
 func newWorker(name string) *worker {
-	c, err := jsonToChain(name)
 	var w *worker
-	if err != nil {
-		w = &worker{
-			Name:  name,
-			Chain: chain{},
-		}
-	} else {
-		w = &worker{
-			Name:  name,
-			Chain: c,
-		}
+	w = &worker{
+		Name:  name,
+		Chain: chain{},
 	}
 
 	workerMapMx.Lock()
@@ -54,10 +47,88 @@ func (w *worker) writeToFile() {
 	w.ChainMx.Lock()
 	defer w.ChainMx.Unlock()
 
-	chainToJson(w.Chain, w.Name)
+	eC, err := jsonToChain(w.Name)
+	if err != nil {
+		fmt.Println(err)
+		chainToJson(w.Chain, w.Name)
+		w.Intake = 0
+		w.Chain = chain{}
+	} else {
+		var chainToWrite chain
 
-	w.Intake = 0
-	w.Chain = chain{}
+		for _, nParent := range w.Chain.Parents {
+			parentMatch := false
+			for eParentIndex, eParent := range eC.Parents {
+				if eParent.Word == nParent.Word {
+					parentMatch = true
+
+					uParent := parent{
+						Word: eParent.Word,
+					}
+
+					for _, nChild := range nParent.Next {
+						childMatch := false
+						for eChildIndex, eChild := range eParent.Next {
+							if eChild.Word == nChild.Word {
+								childMatch = true
+
+								uParent.Next = append(uParent.Next, word{
+									Word:  eChild.Word,
+									Value: eChild.Value + nChild.Value,
+								})
+
+								eParent.Next = removeCorGP(eParent.Next, eChildIndex)
+							}
+						}
+						if !childMatch {
+							uParent.Next = append(uParent.Next, nChild)
+						}
+					}
+
+					for _, eChild := range eParent.Next {
+						uParent.Next = append(uParent.Next, eChild)
+					}
+
+					for _, nGrandparent := range nParent.Previous {
+						GrandparentMatch := false
+						for eGrandparentIndex, eGrandparent := range eParent.Previous {
+							if eGrandparent.Word == nGrandparent.Word {
+								GrandparentMatch = true
+
+								uParent.Previous = append(uParent.Previous, word{
+									Word:  eGrandparent.Word,
+									Value: eGrandparent.Value + nGrandparent.Value,
+								})
+
+								eParent.Previous = removeCorGP(eParent.Previous, eGrandparentIndex)
+							}
+						}
+						if !GrandparentMatch {
+							uParent.Previous = append(uParent.Previous, nGrandparent)
+						}
+					}
+
+					for _, eGrandparent := range eParent.Previous {
+						uParent.Previous = append(uParent.Previous, eGrandparent)
+					}
+
+					chainToWrite.Parents = append(chainToWrite.Parents, uParent)
+					eC.Parents = removeParent(eC.Parents, eParentIndex)
+				}
+			}
+			if !parentMatch {
+				chainToWrite.Parents = append(chainToWrite.Parents, nParent)
+			}
+		}
+
+		for _, eParent := range eC.Parents {
+			chainToWrite.Parents = append(chainToWrite.Parents, eParent)
+		}
+
+		chainToJson(chainToWrite, w.Name)
+		w.Intake = 0
+		w.Chain = chain{}
+	}
 }
 
 // WorkersStats returns a slice of type WorkerStats
@@ -73,3 +144,23 @@ func WorkersStats() (slice []WorkerStats) {
 	workerMapMx.Unlock()
 	return slice
 }
+
+// nextMatch := false
+// for i := 0; i < len(cParent.Next); i++ {
+// 	cChild := &cParent.Next[i]
+
+// 	cW := cChild.Word
+// 	cV := cChild.Value
+// 	for i := 0; i < len(eParent.Next); i++ {
+// 		eChild := &eParent.Next
+
+// 		eW := eChild.Word
+// 		eV := eChild.Value
+
+// 		if eW == cW {
+// 			nextMatch = true
+// 			eV += cV
+// 			continue
+// 		}
+// 	}
+// }

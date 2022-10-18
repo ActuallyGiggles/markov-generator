@@ -196,3 +196,13 @@ func RandomNumber(min int, max int) (num int) {
 func PickRandomFromSlice(slice []string) string {
 	return slice[RandomNumber(0, len(slice))]
 }
+
+func removeCorGP(s []word, i int) []word {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+func removeParent(s []parent, i int) []parent {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
