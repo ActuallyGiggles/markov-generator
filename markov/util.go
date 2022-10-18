@@ -23,7 +23,6 @@ func chains() []string {
 	files, err := ioutil.ReadDir("./markov-chains/")
 	var s []string
 	if err != nil {
-		// fmt.Println("pass")
 		return s
 	}
 	for _, file := range files {

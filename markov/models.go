@@ -23,7 +23,6 @@ type worker struct {
 	Chain        chain
 	ChainMx      sync.Mutex
 	Intake       int
-	Status       string
 	LastModified string
 }
 
@@ -55,6 +54,5 @@ type wRand struct {
 type WorkerStats struct {
 	ChainResponsibleFor string
 	Intake              int
-	Status              string
 	LastModified        string
 }

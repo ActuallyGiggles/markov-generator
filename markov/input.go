@@ -1,7 +1,6 @@
 package markov
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -16,7 +15,6 @@ func In(chainName string, content string) {
 
 	if !ok {
 		w = newWorker(chainName)
-		fmt.Println(w)
 	}
 
 	w.addInput(content)

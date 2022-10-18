@@ -79,21 +79,21 @@ func refreshTerminal() {
 
 		for i := 0; i < len(workers); i += 4 {
 			worker := workers[i]
-			fmt.Printf("\t  %-20s\t%04d\t%-8s |   ", worker.ChainResponsibleFor, worker.Intake, worker.Status)
+			fmt.Printf("\t  %-20s\t%04d |   ", worker.ChainResponsibleFor, worker.Intake)
 
 			if exists := doesSliceContainIndex(workers, i+1); exists {
 				worker2 := workers[i+1]
-				fmt.Printf("%-20s\t%04d\t%-8s |   ", worker2.ChainResponsibleFor, worker2.Intake, worker2.Status)
+				fmt.Printf("%-20s\t%04d |   ", worker2.ChainResponsibleFor, worker2.Intake)
 			}
 
 			if exists := doesSliceContainIndex(workers, i+2); exists {
 				worker3 := workers[i+2]
-				fmt.Printf("%-20s\t%04d\t%-8s |   ", worker3.ChainResponsibleFor, worker3.Intake, worker3.Status)
+				fmt.Printf("%-20s\t%04d |   ", worker3.ChainResponsibleFor, worker3.Intake)
 			}
 
 			if exists := doesSliceContainIndex(workers, i+3); exists {
 				worker4 := workers[i+3]
-				fmt.Printf("%-20s\t%04d\t%-8s", worker4.ChainResponsibleFor, worker4.Intake, worker4.Status)
+				fmt.Printf("%-20s\t%04d", worker4.ChainResponsibleFor, worker4.Intake)
 			}
 
 			fmt.Println()

@@ -28,7 +28,6 @@ func newWorker(name string) *worker {
 	workerMap[name] = w
 	workerMapMx.Unlock()
 
-	w.Status = "Ready"
 	w.LastModified = now()
 
 	return w
@@ -57,13 +56,11 @@ func (w *worker) writeToFile() {
 	w.ChainMx.Lock()
 	defer w.ChainMx.Unlock()
 
-	w.Status = "Writing"
 	w.LastModified = now()
 
 	chainToJson(w.Chain, w.Name)
 
 	w.Intake = 0
-	w.Status = "Ready"
 	w.LastModified = now()
 }
 
@@ -74,7 +71,6 @@ func WorkersStats() (slice []WorkerStats) {
 		e := WorkerStats{
 			ChainResponsibleFor: w.Name,
 			Intake:              w.Intake,
-			Status:              w.Status,
 			LastModified:        w.LastModified,
 		}
 		slice = append(slice, e)
