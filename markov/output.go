@@ -86,6 +86,9 @@ func TargetedBeginning(name string, target string) (output string, err error) {
 				if parentNumber >= len(c.Parents)-1 {
 					initial = false
 					parentExists = true
+					if len(initialList) <= 0 {
+						return "", errors.New(fmt.Sprintf("%s does not contain parents that match: %s", name, target))
+					}
 					parent = pickRandomParent(initialList)
 					parentSplit := strings.Split(parent, " ")
 					output = parentSplit[0] + " "
@@ -126,7 +129,7 @@ func TargetedBeginning(name string, target string) (output string, err error) {
 		}
 
 		if !parentExists {
-			return output, errors.New(fmt.Sprintf("parent(%s) does not exist in chain(%s)", parent, name))
+			return output, errors.New(fmt.Sprintf("%s does not contain parent: %s", name, parent))
 		}
 	}
 

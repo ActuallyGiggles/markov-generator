@@ -82,6 +82,8 @@ func chainToJson(c chain, name string) {
 			debugLog("wrote successfully to", path)
 			debugLog(int64(n2), "-", fileSize, "=", change)
 		} else {
+			fmt.Println("wrote unsuccessfully to", path)
+			fmt.Println(int64(n2), "-", fileSize, "=", change)
 			debugLog("wrote unsuccessfully to", path)
 			debugLog(int64(n2), "-", fileSize, "=", change)
 		}

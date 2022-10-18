@@ -66,9 +66,9 @@ func discordGuard(channel string) {
 		Method: "LikelyBeginning",
 	}
 
-	output, problem := markov.Out(oi)
+	output, err := markov.Out(oi)
 
-	if problem == nil {
+	if err == nil {
 		if !RandomlyPickLongerSentences(output) {
 			recurse(channel)
 		} else {
@@ -132,11 +132,11 @@ func responseWarden(channel string, message string) {
 					Chain:  chainToUse,
 					Target: t,
 				}
-				output, problem := markov.Out(oi)
+				output, err := markov.Out(oi)
 
-				if problem == nil {
-					log.Println("Problem found:", problem)
-					discord.Say("error-tracking", problem.Error())
+				if err == nil {
+					log.Println(err)
+					discord.Say("error-tracking", err.Error())
 				} else {
 					log.Println("Response to use:", output)
 					OutputHandler("responseGuard", channel, output)
