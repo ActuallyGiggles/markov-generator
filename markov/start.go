@@ -10,10 +10,11 @@ var (
 	debug           bool
 )
 
+// Start starts markov based on instructions provided.
 func Start(sI StartInstructions) error {
 	writeMode = sI.WriteMode
-	writeInterval = sI.WriteTicker
-	intervalUnit = sI.TickerUnit
+	writeInterval = sI.WriteInterval
+	intervalUnit = sI.IntervalUnit
 	WriteCountLimit = sI.WriteLimit
 	startKey = sI.StartKey
 	endKey = sI.EndKey

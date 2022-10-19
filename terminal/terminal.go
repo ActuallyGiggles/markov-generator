@@ -68,7 +68,7 @@ func refreshTerminal() {
 		})
 
 		fmt.Println()
-		pi := markov.PeakChainIntake()
+		pi := markov.PeakIntake()
 		fmt.Println("\tChain peak intake:", pi.Chain+",", pi.Amount, pi.Time.Format("15:04:05"))
 
 		if mode := markov.WriteMode(); mode == "ticker" {

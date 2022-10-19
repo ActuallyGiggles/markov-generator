@@ -30,15 +30,6 @@ func (w *worker) addInput(content string) {
 
 	contentToChain(&w.Chain, w.Name, content)
 	w.Intake += 1
-
-	// for _, parent := range w.Chain.Parents {
-	// 	for _, child := range parent.Next {
-	// 		fmt.Println(parent.Word, "->", child.Word)
-	// 	}
-	// 	for _, grandparent := range parent.Previous {
-	// 		fmt.Println(parent.Word, "<-", grandparent.Word)
-	// 	}
-	// }
 }
 
 func (w *worker) writeToFile() {
@@ -131,7 +122,7 @@ func (w *worker) writeToFile() {
 	}
 }
 
-// WorkersStats returns a slice of type WorkerStats
+// WorkersStats returns a slice of type WorkerStats.
 func WorkersStats() (slice []WorkerStats) {
 	workerMapMx.Lock()
 	for _, w := range workerMap {
@@ -144,23 +135,3 @@ func WorkersStats() (slice []WorkerStats) {
 	workerMapMx.Unlock()
 	return slice
 }
-
-// nextMatch := false
-// for i := 0; i < len(cParent.Next); i++ {
-// 	cChild := &cParent.Next[i]
-
-// 	cW := cChild.Word
-// 	cV := cChild.Value
-// 	for i := 0; i < len(eParent.Next); i++ {
-// 		eChild := &eParent.Next
-
-// 		eW := eChild.Word
-// 		eV := eChild.Value
-
-// 		if eW == cW {
-// 			nextMatch = true
-// 			eV += cV
-// 			continue
-// 		}
-// 	}
-// }

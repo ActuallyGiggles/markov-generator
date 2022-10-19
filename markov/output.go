@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Out takes output instructions and returns an output and error.
 func Out(oi OutputInstructions) (output string, err error) {
 	name := oi.Chain
 	method := oi.Method
@@ -13,15 +14,15 @@ func Out(oi OutputInstructions) (output string, err error) {
 
 	switch method {
 	case "LikelyBeginning":
-		output, err = LikelyBeginning(name)
+		output, err = likelyBeginning(name)
 	case "TargetedBeginning":
-		output, err = TargetedBeginning(name, target)
+		output, err = targetedBeginning(name, target)
 	}
 
 	return output, err
 }
 
-func LikelyBeginning(name string) (output string, err error) {
+func likelyBeginning(name string) (output string, err error) {
 	output = ""
 	parent := startKey
 	child := ""
@@ -66,7 +67,7 @@ func LikelyBeginning(name string) (output string, err error) {
 	return output, nil
 }
 
-func TargetedBeginning(name string, target string) (output string, err error) {
+func targetedBeginning(name string, target string) (output string, err error) {
 	output = ""
 	parent := ""
 	child := ""
@@ -153,7 +154,7 @@ func getNextWord(parent parent) (child string) {
 }
 
 func pickRandomParent(parents []string) (parent string) {
-	parent = PickRandomFromSlice(parents)
+	parent = pickRandomFromSlice(parents)
 
 	return parent
 }

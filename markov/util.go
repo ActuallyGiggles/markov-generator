@@ -108,7 +108,7 @@ func duration(chain string, start time.Time) {
 	debugLog(chain + ": " + fmt.Sprint(time.Since(start)))
 }
 
-// CurrentChains returns the names of all chains that have been made
+// CurrentChains returns the names of all chains that have been made.
 func CurrentChains() []string {
 	workerMapMx.Lock()
 	var s []string
@@ -119,23 +119,23 @@ func CurrentChains() []string {
 	return s
 }
 
-// WriteMode returns what the current mode is
+// WriteMode returns what the current mode is.
 func WriteMode() (mode string) {
 	return writeMode
 }
 
-// TimeUntilWrite returns the duration until the next write cycle
+// TimeUntilWrite returns the duration until the next write cycle.
 func TimeUntilWrite() time.Duration {
 	return nextWriteTime.Sub(time.Now())
 }
 
-// NextWriteTime returns what time the next write cycle will happen
+// NextWriteTime returns what time the next write cycle will happen.
 func NextWriteTime() time.Time {
 	return nextWriteTime
 }
 
-// PeakChainIntake returns the highest intake across all workers per session and at what time it happened
-func PeakChainIntake() struct {
+// PeakIntake returns the highest intake across all workers per session and at what time it happened.
+func PeakIntake() struct {
 	Chain  string
 	Amount int
 	Time   time.Time
@@ -158,26 +158,9 @@ func weightedRandom(itemsAndWeights []wRand) string {
 	}
 
 	return fmt.Sprintf("%v", choice.Item)
-
-	// // Create variable for slice of choice struct
-	// var choices []wr.Choice
-
-	// for _, item := range itemsAndWeights { // For every child, value in map
-	// 	word := item.Word
-	// 	value := item.Value
-	// 	choices = append(choices, wr.Choice{Item: word, Weight: uint(value)}) // Add item, value to choices
-	// }
-
-	// chooser, err := wr.NewChooser(choices...) // Initialize chooser
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// return chooser.Pick().(string) // Choose
 }
 
 func createChainsFolder() {
-	// Create or check if markov markov db folder exists
 	_, dberr := os.Stat("./markov-chains")
 	if os.IsNotExist(dberr) {
 		err := os.MkdirAll("./markov-chains", 0755)
@@ -187,14 +170,14 @@ func createChainsFolder() {
 	}
 }
 
-func RandomNumber(min int, max int) (num int) {
+func randomNumber(min int, max int) (num int) {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	num = r.Intn(max-min) + min
 	return num
 }
 
-func PickRandomFromSlice(slice []string) string {
-	return slice[RandomNumber(0, len(slice))]
+func pickRandomFromSlice(slice []string) string {
+	return slice[randomNumber(0, len(slice))]
 }
 
 func removeCorGP(s []word, i int) []word {

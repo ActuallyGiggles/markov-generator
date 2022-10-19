@@ -301,7 +301,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.CurrentCount = markov.CurrentCount
 		response.WriteCountLimit = markov.WriteCountLimit
 
-		pi := markov.PeakChainIntake()
+		pi := markov.PeakIntake()
 		response.PeakChainIntake.Chain = pi.Chain
 		response.PeakChainIntake.Amount = pi.Amount
 		response.PeakChainIntake.Time = pi.Time

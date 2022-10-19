@@ -4,6 +4,7 @@ import (
 	"strings"
 )
 
+// In adds an entry into a specific chain.
 func In(chainName string, content string) {
 	if content == "" || len(content) <= 0 {
 		return

@@ -66,9 +66,7 @@ func Start() {
 	twitch.GatherEmotes()
 
 	i := markov.StartInstructions{
-		WriteMode: "counter",
-		// WriteInterval: 10,
-		// IntervalUnit:  "minutes",
+		WriteMode:  "counter",
 		WriteLimit: 10000,
 		StartKey:   "b5G(n1$I!4g",
 		EndKey:     "e1$D(n7",
