@@ -3,7 +3,6 @@ package twitch
 import (
 	"log"
 	"markov-generator/global"
-	"markov-generator/terminal"
 	"sync"
 )
 
@@ -61,7 +60,6 @@ func GetEmoteController(isInit bool) (ok bool) {
 		cleanAndTransferChannelEmotes()
 	}
 
-	terminal.UpdateTerminal("emotes")
 	return true
 }
 

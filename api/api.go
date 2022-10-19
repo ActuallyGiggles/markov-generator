@@ -7,7 +7,7 @@ import (
 	"markov-generator/handler"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
-	"markov-generator/terminal"
+	"markov-generator/stats"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
@@ -286,7 +286,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			WriteMode       string        `json:"write_mode"`
 			TimeUntilWrite  time.Duration `json:"time_until_write"`
 			CurrentCount    int           `json:"current_count"`
-			WriteCountLimit int           `json:"write_count_limit"`
+			CountLimit      int           `json:"write_count_limit"`
 			PeakChainIntake struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
@@ -294,17 +294,16 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			} `json:"peak_chain_intake"`
 		}{}
 
-		response.RunTime = terminal.T.RunningTime
+		s := stats.GetStats()
 
-		response.WriteMode = markov.WriteMode()
-		response.TimeUntilWrite = markov.TimeUntilWrite()
-		response.CurrentCount = markov.CurrentCount
-		response.WriteCountLimit = markov.WriteCountLimit
-
-		pi := markov.PeakIntake()
-		response.PeakChainIntake.Chain = pi.Chain
-		response.PeakChainIntake.Amount = pi.Amount
-		response.PeakChainIntake.Time = pi.Time
+		response.RunTime = s.RunTime
+		response.WriteMode = s.WriteMode
+		response.TimeUntilWrite = s.TimeUntilWrite
+		response.CurrentCount = s.CurrentCount
+		response.CountLimit = s.CountLimit
+		response.PeakChainIntake.Chain = s.PeakIntake.Chain
+		response.PeakChainIntake.Amount = s.PeakIntake.Amount
+		response.PeakChainIntake.Time = s.PeakIntake.Time
 
 		json.NewEncoder(w).Encode(response)
 	} else {

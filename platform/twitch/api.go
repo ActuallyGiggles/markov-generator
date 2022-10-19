@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"markov-generator/global"
-	"markov-generator/terminal"
 	"net/http"
 )
 
@@ -411,5 +410,4 @@ func GetLiveStatuses() {
 		r := GetLiveStatus(channel.ChannelName)
 		IsLive[channel.ChannelName] = r
 	}
-	terminal.UpdateTerminal("live")
 }
