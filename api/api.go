@@ -282,18 +282,18 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response := struct {
-			StartTime       time.Time         `json:"start_time"`
-			RunTime         time.Duration     `json:"run_time"`
-			WriteMode       string            `json:"write_mode"`
-			MemoryUsage     stats.MemoryUsage `json:"memory_usage"`
-			TimeUntilWrite  time.Duration     `json:"time_until_write"`
-			CurrentCount    int               `json:"current_count"`
-			CountLimit      int               `json:"count_limit"`
-			PeakChainIntake struct {
+			StartTime      time.Time         `json:"start_time"`
+			RunTime        time.Duration     `json:"run_time"`
+			WriteMode      string            `json:"write_mode"`
+			MemoryUsage    stats.MemoryUsage `json:"memory_usage"`
+			TimeUntilWrite time.Duration     `json:"time_until_write"`
+			CurrentCount   int               `json:"current_count"`
+			CountLimit     int               `json:"count_limit"`
+			PeakIntake     struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
 				Time   time.Time `json:"time"`
-			} `json:"peak_chain_intake"`
+			} `json:"peak_intake"`
 		}{}
 
 		s := stats.GetStats()
@@ -305,9 +305,9 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.TimeUntilWrite = s.TimeUntilWrite
 		response.CurrentCount = s.CurrentCount
 		response.CountLimit = s.CountLimit
-		response.PeakChainIntake.Chain = s.PeakIntake.Chain
-		response.PeakChainIntake.Amount = s.PeakIntake.Amount
-		response.PeakChainIntake.Time = s.PeakIntake.Time
+		response.PeakIntake.Chain = s.PeakIntake.Chain
+		response.PeakIntake.Amount = s.PeakIntake.Amount
+		response.PeakIntake.Time = s.PeakIntake.Time
 
 		json.NewEncoder(w).Encode(response)
 	} else {
