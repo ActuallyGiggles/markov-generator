@@ -288,7 +288,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			MemoryUsage     stats.MemoryUsage `json:"memory_usage"`
 			TimeUntilWrite  time.Duration     `json:"time_until_write"`
 			CurrentCount    int               `json:"current_count"`
-			CountLimit      int               `json:"write_count_limit"`
+			CountLimit      int               `json:"count_limit"`
 			PeakChainIntake struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
