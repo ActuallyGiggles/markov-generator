@@ -282,6 +282,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response := struct {
+			StartTime       time.Time         `json:"start_time"`
 			RunTime         time.Duration     `json:"run_time"`
 			WriteMode       string            `json:"write_mode"`
 			MemoryUsage     stats.MemoryUsage `json:"memory_usage"`
@@ -297,6 +298,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 
 		s := stats.GetStats()
 
+		response.StartTime = s.StartTime
 		response.RunTime = s.RunTime
 		response.MemoryUsage = s.MemoryUsage
 		response.WriteMode = s.WriteMode
