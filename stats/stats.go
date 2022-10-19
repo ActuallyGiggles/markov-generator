@@ -30,6 +30,7 @@ func Start() {
 func GetStats() (stats Stats) {
 	stats.StartTime = StartTime
 	stats.RunTime = time.Now().Sub(StartTime)
+	stats.MemoryUsage = PrintMemUsage()
 	stats.WriteMode = markov.WriteMode()
 	stats.TimeUntilWrite = markov.TimeUntilWrite()
 	stats.CurrentCount = markov.CurrentCount

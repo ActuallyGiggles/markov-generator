@@ -282,11 +282,12 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response := struct {
-			RunTime         time.Duration `json:"run_time"`
-			WriteMode       string        `json:"write_mode"`
-			TimeUntilWrite  time.Duration `json:"time_until_write"`
-			CurrentCount    int           `json:"current_count"`
-			CountLimit      int           `json:"write_count_limit"`
+			RunTime         time.Duration     `json:"run_time"`
+			WriteMode       string            `json:"write_mode"`
+			MemoryUsage     stats.MemoryUsage `json:"memory_usage"`
+			TimeUntilWrite  time.Duration     `json:"time_until_write"`
+			CurrentCount    int               `json:"current_count"`
+			CountLimit      int               `json:"write_count_limit"`
 			PeakChainIntake struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
@@ -297,6 +298,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		s := stats.GetStats()
 
 		response.RunTime = s.RunTime
+		response.MemoryUsage = s.MemoryUsage
 		response.WriteMode = s.WriteMode
 		response.TimeUntilWrite = s.TimeUntilWrite
 		response.CurrentCount = s.CurrentCount
