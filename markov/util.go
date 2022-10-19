@@ -134,13 +134,13 @@ func NextWriteTime() time.Time {
 	return nextWriteTime
 }
 
-// ChainPeakIntake returns the highest intake across all workers per session and at what time it happened
-func ChainPeakIntake() struct {
+// PeakChainIntake returns the highest intake across all workers per session and at what time it happened
+func PeakChainIntake() struct {
 	Chain  string
 	Amount int
 	Time   time.Time
 } {
-	return chainPeakIntake
+	return peakChainIntake
 }
 
 func weightedRandom(itemsAndWeights []wRand) string {

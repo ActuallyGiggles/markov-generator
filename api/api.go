@@ -7,9 +7,11 @@ import (
 	"markov-generator/handler"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
+	"markov-generator/terminal"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
+	"time"
 
 	"markov-generator/markov"
 
@@ -19,6 +21,21 @@ import (
 var (
 	in chan platform.Message
 )
+
+func HandleRequests() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", homePage)
+	mux.HandleFunc("/tracked-channels", trackedChannels)
+	mux.HandleFunc("/live-channels", liveChannels)
+	mux.HandleFunc("/tracked-emotes", trackedEmotes)
+	mux.HandleFunc("/get-sentence", getSentence)
+	mux.HandleFunc("/server-stats", serverStats)
+	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
+
+	handler := cors.AllowAll().Handler(mux)
+	log.Println("API started")
+	http.ListenAndServe(":10000", handler)
+}
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit homePage Endpoint")
@@ -248,16 +265,53 @@ func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func HandleRequests() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", homePage)
-	mux.HandleFunc("/tracked-channels", trackedChannels)
-	mux.HandleFunc("/live-channels", liveChannels)
-	mux.HandleFunc("/tracked-emotes", trackedEmotes)
-	mux.HandleFunc("/get-sentence", getSentence)
-	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
+func serverStats(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit getServerStats Endpoint")
+	w.Header().Set("Content-Type", "application/json")
 
-	handler := cors.AllowAll().Handler(mux)
-	log.Println("API started")
-	http.ListenAndServe(":10000", handler)
+	if limitEndpoint(1, "serverStats") {
+		access := r.URL.Query().Get("access")
+
+		if access != "security-omegalul" {
+			err := struct {
+				Error string
+			}{}
+			err.Error = "Incorrect security code"
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+
+		response := struct {
+			RunTime         time.Duration `json:"run_time"`
+			WriteMode       string        `json:"write_mode"`
+			TimeUntilWrite  time.Duration `json:"time_until_write"`
+			CurrentCount    int           `json:"current_count"`
+			WriteCountLimit int           `json:"write_count_limit"`
+			PeakChainIntake struct {
+				Chain  string    `json:"chain"`
+				Amount int       `json:"amount"`
+				Time   time.Time `json:"time"`
+			} `json:"peak_chain_intake"`
+		}{}
+
+		response.RunTime = terminal.T.RunningTime
+
+		response.WriteMode = markov.WriteMode()
+		response.TimeUntilWrite = markov.TimeUntilWrite()
+		response.CurrentCount = markov.CurrentCount
+		response.WriteCountLimit = markov.WriteCountLimit
+
+		pi := markov.PeakChainIntake()
+		response.PeakChainIntake.Chain = pi.Chain
+		response.PeakChainIntake.Amount = pi.Amount
+		response.PeakChainIntake.Time = pi.Time
+
+		json.NewEncoder(w).Encode(response)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 1 second"
+		json.NewEncoder(w).Encode(err)
+	}
 }

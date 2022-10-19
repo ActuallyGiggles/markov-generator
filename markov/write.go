@@ -7,7 +7,7 @@ import (
 var (
 	CurrentCount    int
 	nextWriteTime   time.Time
-	chainPeakIntake struct {
+	peakChainIntake struct {
 		Chain  string
 		Amount int
 		Time   time.Time
@@ -52,10 +52,10 @@ func writeLoop() {
 			continue
 		}
 
-		if w.Intake > chainPeakIntake.Amount {
-			chainPeakIntake.Chain = w.Name
-			chainPeakIntake.Amount = w.Intake
-			chainPeakIntake.Time = time.Now()
+		if w.Intake > peakChainIntake.Amount {
+			peakChainIntake.Chain = w.Name
+			peakChainIntake.Amount = w.Intake
+			peakChainIntake.Time = time.Now()
 		}
 
 		// if writing >= len(workerMap)/2 {
