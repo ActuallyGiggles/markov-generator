@@ -41,10 +41,9 @@ func GetStats() (stats Stats) {
 }
 
 type MemoryUsage struct {
-	Allocated      uint64
-	TotalAllocated uint64
-	System         uint64
-	NumGC          uint32
+	Allocated      uint64 `json:"allocated"`
+	TotalAllocated uint64 `json:"total_allocated"`
+	System         uint64 `json:"system"`
 }
 
 // PrintMemUsage outputs the current, total and OS memory being used. As well as the number
@@ -56,7 +55,6 @@ func PrintMemUsage() (mu MemoryUsage) {
 	mu.Allocated = bToMb(m.Alloc)
 	mu.TotalAllocated = bToMb(m.TotalAlloc)
 	mu.System = bToMb(m.Sys)
-	mu.NumGC = m.NumGC
 
 	return mu
 }
