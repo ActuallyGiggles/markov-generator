@@ -22,7 +22,6 @@ func GatherEmotes() {
 
 func updateLiveStatuses() {
 	for range time.Tick(30 * time.Second) {
-		stats.Log("Updating live statuses...")
 		GetLiveStatuses()
 	}
 }

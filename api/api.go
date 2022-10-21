@@ -295,7 +295,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 				Amount int       `json:"amount"`
 				Time   time.Time `json:"time"`
 			} `json:"peak_intake"`
-			Logs []string
+			Logs []string `json:"logs"`
 		}{}
 
 		s := stats.GetStats()
