@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"markov-generator/handler"
 	"sync"
 	"time"
@@ -45,19 +44,16 @@ func limitEndpoint(timer int, endpoint string) bool {
 		endpointLimit = 10
 	}
 	if limit[endpoint] > endpointLimit {
-		fmt.Println(endpoint, "not passed", limit[endpoint])
 		limitMx.Unlock()
 		return false
 	}
 	limit[endpoint] += 1
-	fmt.Println(endpoint, "passed", limit[endpoint])
 	limitMx.Unlock()
 	go func(timer int) {
 		time.Sleep(time.Duration(timer * 1e9))
 		limitMx.Lock()
 		limit[endpoint] -= 1
 		limitMx.Unlock()
-		fmt.Println(endpoint, "cleared by 1", limit[endpoint])
 	}(timer)
 	return true
 }

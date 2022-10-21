@@ -32,8 +32,6 @@ func Start() {
 	}
 
 	go pickTweet()
-
-	stats.Log("Twitter started")
 }
 
 func SendTweet(channel string, message string) {

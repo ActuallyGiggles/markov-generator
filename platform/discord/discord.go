@@ -42,8 +42,6 @@ func Start(ch chan platform.Message, wg *sync.WaitGroup) {
 
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
-
-	stats.Log("Discord started")
 }
 
 // messageHandler receives messages and sends them into the in channel.

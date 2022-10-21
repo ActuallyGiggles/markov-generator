@@ -1,7 +1,6 @@
 package twitch
 
 import (
-	"markov-generator/stats"
 	"sync"
 	"time"
 )
@@ -12,10 +11,8 @@ var (
 )
 
 func GatherEmotes() {
-	stats.Log("Gathering emotes")
 	GetLiveStatuses()
 	GetEmoteController(true)
-	stats.Log("Emotes gathered")
 	go updateLiveStatuses()
 	go refreshEmotes()
 }

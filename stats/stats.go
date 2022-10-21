@@ -14,6 +14,7 @@ type Stats struct {
 	MemoryUsage    MemoryUsage
 	WriteMode      string
 	TimeUntilWrite time.Duration
+	TotalCount     int
 	CurrentCount   int
 	CountLimit     int
 	Workers        int
@@ -48,6 +49,7 @@ func GetStats() (stats Stats) {
 	stats.MemoryUsage = PrintMemUsage()
 	stats.WriteMode = markov.WriteMode()
 	stats.TimeUntilWrite = markov.TimeUntilWrite()
+	stats.TotalCount = markov.TotalCount
 	stats.CurrentCount = markov.CurrentCount
 	stats.CountLimit = markov.WriteCountLimit
 	stats.Workers = len(markov.CurrentChains())

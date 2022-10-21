@@ -47,8 +47,7 @@ func main() {
 }
 
 func Start() {
-
-	defer global.RecoverFullName("main.go -> Start()")
+	stats.Log("Initializing")
 
 	c := make(chan platform.Message)
 
@@ -56,14 +55,20 @@ func Start() {
 	stats.Log("Global started")
 
 	go twitter.Start()
+	stats.Log("Twitter started")
+
 	go handler.MsgHandler(c)
+	stats.Log("Handler started")
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go discord.Start(c, &wg)
+	stats.Log("Discord started")
 	wg.Wait()
 
+	stats.Log("Gathering emotes")
 	twitch.GatherEmotes()
+	stats.Log("Gathered emotes")
 
 	i := markov.StartInstructions{
 		WriteMode:  "counter",
@@ -76,8 +81,12 @@ func Start() {
 	stats.Log("Markov started")
 
 	go api.HandleRequests()
+	stats.Log("API started")
 
 	go twitch.Start(c)
+	stats.Log("Twitch Started")
 
 	stats.Start()
+
+	stats.Log("Initialization complete")
 }

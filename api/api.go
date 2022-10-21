@@ -33,7 +33,6 @@ func HandleRequests() {
 	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
 
 	handler := cors.AllowAll().Handler(mux)
-	stats.Log("API started")
 	http.ListenAndServe(":10000", handler)
 }
 
@@ -287,6 +286,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			WriteMode      string            `json:"write_mode"`
 			MemoryUsage    stats.MemoryUsage `json:"memory_usage"`
 			TimeUntilWrite time.Duration     `json:"time_until_write"`
+			TotalCount     int               `json:"total_count"`
 			CurrentCount   int               `json:"current_count"`
 			CountLimit     int               `json:"count_limit"`
 			Workers        int               `json:"workers"`
@@ -305,6 +305,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.MemoryUsage = s.MemoryUsage
 		response.WriteMode = s.WriteMode
 		response.TimeUntilWrite = s.TimeUntilWrite
+		response.TotalCount = s.TotalCount
 		response.CurrentCount = s.CurrentCount
 		response.CountLimit = s.CountLimit
 		response.Workers = s.Workers
