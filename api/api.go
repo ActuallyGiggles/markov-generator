@@ -295,6 +295,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 				Amount int       `json:"amount"`
 				Time   time.Time `json:"time"`
 			} `json:"peak_intake"`
+			Logs []string
 		}{}
 
 		s := stats.GetStats()
@@ -310,6 +311,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.PeakIntake.Chain = s.PeakIntake.Chain
 		response.PeakIntake.Amount = s.PeakIntake.Amount
 		response.PeakIntake.Time = s.PeakIntake.Time
+		response.Logs = s.Logs
 
 		json.NewEncoder(w).Encode(response)
 	} else {
