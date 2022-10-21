@@ -23,14 +23,19 @@ type Stats struct {
 		Amount int
 		Time   time.Time
 	}
-	Logs []string
+	IntakePerMinute int
+	Logs            []string
 }
 
 var StartTime time.Time
+var IntakePerMinute int
+var previousTotal int
 var Logs []string
 
 func Start() {
 	StartTime = time.Now()
+
+	go intakePerMinute()
 }
 
 func Log(message ...string) {
@@ -54,9 +59,18 @@ func GetStats() (stats Stats) {
 	stats.CountLimit = markov.WriteCountLimit
 	stats.Workers = len(markov.CurrentChains())
 	stats.PeakIntake = markov.PeakIntake()
+	stats.IntakePerMinute = IntakePerMinute
 	stats.Logs = Logs
 
 	return stats
+}
+
+func intakePerMinute() {
+	for range time.Tick(1 * time.Minute) {
+		lastMinute := markov.TotalCount - previousTotal
+		previousTotal = markov.TotalCount
+		IntakePerMinute = lastMinute
+	}
 }
 
 type MemoryUsage struct {
