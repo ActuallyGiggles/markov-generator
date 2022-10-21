@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"log"
 	"markov-generator/global"
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
+	"markov-generator/stats"
 	"strings"
 )
 
@@ -99,7 +99,7 @@ func updateDirective(returnChannelID string, messageID string, args []string) {
 
 	success = removeDirective(channel.ChannelName)
 	if !success {
-		log.Println("failed to remove directive " + channel.ChannelName)
+		stats.Log("failed to remove directive " + channel.ChannelName)
 		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
 	}
 	global.Directives = append(global.Directives, channel)
@@ -115,7 +115,7 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 
 	existingArgs, success := findExistingSettings(channelName)
 	if !success {
-		log.Println("failed to find existing args for " + channelName)
+		stats.Log("failed to find existing args for " + channelName)
 		discord.Say("error-tracking", "failed to find existing args for "+channelName)
 	}
 
@@ -150,7 +150,7 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 
 	success = removeDirective(channel.ChannelName)
 	if !success {
-		log.Println("failed to remove directive " + channel.ChannelName)
+		stats.Log("failed to remove directive " + channel.ChannelName)
 		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
 	}
 	global.Directives = append(global.Directives, channel)

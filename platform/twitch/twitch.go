@@ -1,9 +1,9 @@
 package twitch
 
 import (
-	"log"
 	"markov-generator/global"
 	"markov-generator/platform"
+	"markov-generator/stats"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )
@@ -31,7 +31,7 @@ func Start(in chan platform.Message) {
 
 	for _, directive := range global.Directives {
 		client.Join(directive.ChannelName)
-		//log.Println("Joined", directive.ChannelName)
+		stats.Log("Joined", directive.ChannelName)
 	}
 
 	err := client.Connect()
@@ -39,7 +39,7 @@ func Start(in chan platform.Message) {
 		panic(err)
 	}
 
-	log.Println("Twitch Started")
+	stats.Log("Twitch Started")
 }
 
 // Say sends a message to a specific twitch chatroom.

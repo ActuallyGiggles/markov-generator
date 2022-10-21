@@ -43,7 +43,7 @@ func main() {
 	Start()
 
 	<-sc
-	log.Println("Stopping...")
+	stats.Log("Stopping...")
 }
 
 func Start() {
@@ -53,7 +53,7 @@ func Start() {
 	c := make(chan platform.Message)
 
 	global.Start()
-	log.Println("Global started")
+	stats.Log("Global started")
 
 	go twitter.Start()
 	go handler.MsgHandler(c)
@@ -73,7 +73,7 @@ func Start() {
 		Debug:      false,
 	}
 	markov.Start(i)
-	log.Println("Markov started")
+	stats.Log("Markov started")
 
 	go api.HandleRequests()
 

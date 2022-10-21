@@ -33,7 +33,7 @@ func HandleRequests() {
 	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
 
 	handler := cors.AllowAll().Handler(mux)
-	log.Println("API started")
+	stats.Log("API started")
 	http.ListenAndServe(":10000", handler)
 }
 
@@ -289,6 +289,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			TimeUntilWrite time.Duration     `json:"time_until_write"`
 			CurrentCount   int               `json:"current_count"`
 			CountLimit     int               `json:"count_limit"`
+			Workers        int               `json:"workers"`
 			PeakIntake     struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
@@ -305,6 +306,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.TimeUntilWrite = s.TimeUntilWrite
 		response.CurrentCount = s.CurrentCount
 		response.CountLimit = s.CountLimit
+		response.Workers = s.Workers
 		response.PeakIntake.Chain = s.PeakIntake.Chain
 		response.PeakIntake.Amount = s.PeakIntake.Amount
 		response.PeakIntake.Time = s.PeakIntake.Time

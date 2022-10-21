@@ -1,6 +1,8 @@
 package stats
 
 import (
+	"fmt"
+	"log"
 	"markov-generator/markov"
 	"runtime"
 	"time"
@@ -14,17 +16,30 @@ type Stats struct {
 	TimeUntilWrite time.Duration
 	CurrentCount   int
 	CountLimit     int
+	Workers        int
 	PeakIntake     struct {
 		Chain  string
 		Amount int
 		Time   time.Time
 	}
+	Logs []string
 }
 
 var StartTime time.Time
+var Logs []string
 
 func Start() {
 	StartTime = time.Now()
+}
+
+func Log(message ...string) {
+	log.Println(message)
+	ct := time.Now()
+	year, month, day := ct.Date()
+	hour := ct.Hour()
+	minute := ct.Minute()
+	second := ct.Second()
+	Logs = append(Logs, fmt.Sprintf("%d/%s/%d %d:%d:%d", year, month, day, hour, minute, second))
 }
 
 func GetStats() (stats Stats) {
@@ -35,7 +50,9 @@ func GetStats() (stats Stats) {
 	stats.TimeUntilWrite = markov.TimeUntilWrite()
 	stats.CurrentCount = markov.CurrentCount
 	stats.CountLimit = markov.WriteCountLimit
+	stats.Workers = len(markov.CurrentChains())
 	stats.PeakIntake = markov.PeakIntake()
+	stats.Logs = Logs
 
 	return stats
 }
