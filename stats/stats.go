@@ -39,7 +39,7 @@ func Log(message ...string) {
 	hour := ct.Hour()
 	minute := ct.Minute()
 	second := ct.Second()
-	Logs = append(Logs, fmt.Sprintf("%d/%s/%d %d:%d:%d", year, month, day, hour, minute, second))
+	Logs = append(Logs, fmt.Sprintf("%d/%s/%d %d:%d:%d %s", year, month, day, hour, minute, second, message))
 }
 
 func GetStats() (stats Stats) {
