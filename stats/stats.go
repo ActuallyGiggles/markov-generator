@@ -67,9 +67,8 @@ func GetStats() (stats Stats) {
 
 func intakePerMinute() {
 	for range time.Tick(1 * time.Minute) {
-		lastMinute := markov.TotalCount - previousTotal
+		IntakePerMinute = markov.TotalCount - previousTotal
 		previousTotal = markov.TotalCount
-		IntakePerMinute = lastMinute
 	}
 }
 
