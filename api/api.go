@@ -281,17 +281,17 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response := struct {
-			StartTime       time.Time         `json:"start_time"`
-			RunTime         time.Duration     `json:"run_time"`
-			WriteMode       string            `json:"write_mode"`
-			MemoryUsage     stats.MemoryUsage `json:"memory_usage"`
-			TimeUntilWrite  time.Duration     `json:"time_until_write"`
-			TotalCount      int               `json:"total_count"`
-			CurrentCount    int               `json:"current_count"`
-			CountLimit      int               `json:"count_limit"`
-			Workers         int               `json:"workers"`
-			IntakePerMinute int               `json:"intake_per_minute"`
-			PeakIntake      struct {
+			StartTime      time.Time         `json:"start_time"`
+			RunTime        time.Duration     `json:"run_time"`
+			WriteMode      string            `json:"write_mode"`
+			MemoryUsage    stats.MemoryUsage `json:"memory_usage"`
+			TimeUntilWrite time.Duration     `json:"time_until_write"`
+			TotalCount     int               `json:"total_count"`
+			CurrentCount   int               `json:"current_count"`
+			CountLimit     int               `json:"count_limit"`
+			Workers        int               `json:"workers"`
+			IntakePerHour  int               `json:"intake_per_hour"`
+			PeakIntake     struct {
 				Chain  string    `json:"chain"`
 				Amount int       `json:"amount"`
 				Time   time.Time `json:"time"`
@@ -310,7 +310,7 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		response.CurrentCount = s.CurrentCount
 		response.CountLimit = s.CountLimit
 		response.Workers = s.Workers
-		response.IntakePerMinute = s.IntakePerMinute
+		response.IntakePerHour = s.IntakePerHour
 		response.PeakIntake.Chain = s.PeakIntake.Chain
 		response.PeakIntake.Amount = s.PeakIntake.Amount
 		response.PeakIntake.Time = s.PeakIntake.Time
