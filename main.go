@@ -75,7 +75,7 @@ func Start() {
 		WriteLimit: 10000,
 		StartKey:   "b5G(n1$I!4g",
 		EndKey:     "e1$D(n7",
-		Debug:      true,
+		Debug:      false,
 	}
 	markov.Start(i)
 	stats.Log("Markov started")

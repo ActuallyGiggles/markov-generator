@@ -13,13 +13,17 @@ type Stats struct {
 	RunTime   time.Duration `json:"run_time"`
 
 	WriteMode      string                  `json:"write_mode"`
-	TotalCount     int                     `json:"total_count"`
 	TimeUntilWrite time.Duration           `json:"time_until_write"`
 	CurrentCount   int                     `json:"current_count"`
 	CountLimit     int                     `json:"count_limit"`
 	IntakePerHour  int                     `json:"intake_per_hour"`
 	Workers        int                     `json:"workers"`
 	PeakIntake     markov.PeakIntakeStruct `json:"peak_intake"`
+
+	TotalInputs  int `json:"total_inputs"`
+	TotalOutputs int `json:"total_outputs"`
+	WebsiteHits  int `json:"website_hits"`
+	SentenceHits int `json:"sentence_hits"`
 
 	MemoryUsage MemoryUsage `json:"memory_usage"`
 
@@ -60,13 +64,15 @@ func GetStats() (stats Stats) {
 	stats.RunTime = time.Now().Sub(StartTime)
 
 	stats.WriteMode = markov.WriteMode()
-	stats.TotalCount = markov.TotalCount
 	stats.TimeUntilWrite = markov.TimeUntilWrite()
-	stats.CurrentCount = markov.CurrentCount
-	stats.CountLimit = markov.WriteCountLimit
+	stats.CurrentCount = markov.CurrentInputs
+	stats.CountLimit = markov.WriteInputLimit
 	stats.IntakePerHour = IntakePerHour
 	stats.Workers = len(markov.CurrentChains())
 	stats.PeakIntake = markov.PeakIntake()
+
+	stats.TotalInputs = markov.TotalInputs
+	stats.TotalOutputs = markov.TotalOutputs
 
 	stats.MemoryUsage = PrintMemUsage()
 
@@ -77,8 +83,8 @@ func GetStats() (stats Stats) {
 
 func intakePerHour() {
 	for range time.Tick(1 * time.Hour) {
-		IntakePerHour = markov.TotalCount - previousTotal
-		previousTotal = markov.TotalCount
+		IntakePerHour = markov.TotalInputs - previousTotal
+		previousTotal = markov.TotalInputs
 	}
 }
 

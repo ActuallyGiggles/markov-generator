@@ -18,7 +18,9 @@ import (
 )
 
 var (
-	in chan platform.Message
+	in           chan platform.Message
+	websiteHits  int
+	sentenceHits int
 )
 
 func HandleRequests() {
@@ -98,6 +100,7 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 }
 
 func liveChannels(w http.ResponseWriter, r *http.Request) {
+	websiteHits += 1
 	log.Println("Hit liveChannels Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -145,6 +148,7 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSentence(w http.ResponseWriter, r *http.Request) {
+	sentenceHits += 1
 	log.Println("Hit getSentence Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 	method := r.URL.Query().Get("method")
@@ -280,6 +284,9 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 		}
 
 		s := stats.GetStats()
+
+		s.WebsiteHits = websiteHits
+		s.SentenceHits = sentenceHits
 
 		json.NewEncoder(w).Encode(s)
 	} else {

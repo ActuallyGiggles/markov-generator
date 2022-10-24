@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var TotalOutputs int
+
 // Out takes output instructions and returns an output and error.
 func Out(oi OutputInstructions) (output string, err error) {
 	name := oi.Chain
@@ -17,6 +19,10 @@ func Out(oi OutputInstructions) (output string, err error) {
 		output, err = likelyBeginning(name)
 	case "TargetedBeginning":
 		output, err = targetedBeginning(name, target)
+	}
+
+	if err == nil {
+		TotalOutputs += 1
 	}
 
 	return output, err

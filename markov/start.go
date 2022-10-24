@@ -4,7 +4,7 @@ var (
 	writeMode       string
 	writeInterval   int
 	intervalUnit    string
-	WriteCountLimit int
+	WriteInputLimit int
 	startKey        string
 	endKey          string
 	debug           bool
@@ -15,7 +15,7 @@ func Start(sI StartInstructions) error {
 	writeMode = sI.WriteMode
 	writeInterval = sI.WriteInterval
 	intervalUnit = sI.IntervalUnit
-	WriteCountLimit = sI.WriteLimit
+	WriteInputLimit = sI.WriteLimit
 	startKey = sI.StartKey
 	endKey = sI.EndKey
 	debug = sI.Debug

@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	TotalCount      int
-	CurrentCount    int
+	TotalInputs     int
+	CurrentInputs   int
 	nextWriteTime   time.Time
 	peakChainIntake PeakIntakeStruct
 )
 
 func writeCounter() {
-	TotalCount += 1
+	TotalInputs += 1
 	if writeMode == "counter" {
-		CurrentCount += 1
-		if CurrentCount > WriteCountLimit {
+		CurrentInputs += 1
+		if CurrentInputs > WriteInputLimit {
 			go writeLoop()
-			CurrentCount = 0
+			CurrentInputs = 0
 		}
 	}
 }
