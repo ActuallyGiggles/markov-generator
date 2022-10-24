@@ -8,11 +8,7 @@ var (
 	TotalCount      int
 	CurrentCount    int
 	nextWriteTime   time.Time
-	peakChainIntake struct {
-		Chain  string
-		Amount int
-		Time   time.Time
-	}
+	peakChainIntake PeakIntakeStruct
 )
 
 func writeCounter() {

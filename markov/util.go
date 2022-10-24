@@ -39,14 +39,14 @@ func jsonToChain(name string) (c chain, err error) {
 	path := "./markov-chains/" + name + ".json"
 	file, err := os.Open(path)
 	if err != nil {
-		debugLog("Failed reading file:", err)
+		debugLog("Failed reading "+name+":", err)
 		return chain{}, err
 	}
 	defer file.Close()
 
 	err = json.NewDecoder(file).Decode(&c)
 	if err != nil {
-		debugLog("Error when unmarshalling file:", path, "\n", err)
+		debugLog("Error when unmarshalling "+name+":", path, "\n", err)
 		return chain{}, err
 	}
 
@@ -61,7 +61,7 @@ func chainToJson(c chain, name string) {
 		debugLog(err)
 	}
 
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		debugLog(err)
 	}
@@ -135,11 +135,7 @@ func NextWriteTime() time.Time {
 }
 
 // PeakIntake returns the highest intake across all workers per session and at what time it happened.
-func PeakIntake() struct {
-	Chain  string
-	Amount int
-	Time   time.Time
-} {
+func PeakIntake() PeakIntakeStruct {
 	return peakChainIntake
 }
 

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
-	"time"
 
 	"markov-generator/markov"
 
@@ -280,43 +279,9 @@ func serverStats(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response := struct {
-			StartTime      time.Time         `json:"start_time"`
-			RunTime        time.Duration     `json:"run_time"`
-			WriteMode      string            `json:"write_mode"`
-			MemoryUsage    stats.MemoryUsage `json:"memory_usage"`
-			TimeUntilWrite time.Duration     `json:"time_until_write"`
-			TotalCount     int               `json:"total_count"`
-			CurrentCount   int               `json:"current_count"`
-			CountLimit     int               `json:"count_limit"`
-			Workers        int               `json:"workers"`
-			IntakePerHour  int               `json:"intake_per_hour"`
-			PeakIntake     struct {
-				Chain  string    `json:"chain"`
-				Amount int       `json:"amount"`
-				Time   time.Time `json:"time"`
-			} `json:"peak_intake"`
-			Logs []string `json:"logs"`
-		}{}
-
 		s := stats.GetStats()
 
-		response.StartTime = s.StartTime
-		response.RunTime = s.RunTime
-		response.MemoryUsage = s.MemoryUsage
-		response.WriteMode = s.WriteMode
-		response.TimeUntilWrite = s.TimeUntilWrite
-		response.TotalCount = s.TotalCount
-		response.CurrentCount = s.CurrentCount
-		response.CountLimit = s.CountLimit
-		response.Workers = s.Workers
-		response.IntakePerHour = s.IntakePerHour
-		response.PeakIntake.Chain = s.PeakIntake.Chain
-		response.PeakIntake.Amount = s.PeakIntake.Amount
-		response.PeakIntake.Time = s.PeakIntake.Time
-		response.Logs = s.Logs
-
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(w).Encode(s)
 	} else {
 		err := struct {
 			Error string

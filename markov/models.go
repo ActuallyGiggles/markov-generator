@@ -1,6 +1,9 @@
 package markov
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // StartInstructions details intructions to start markov.
 //
@@ -72,4 +75,10 @@ type wRand struct {
 type WorkerStats struct {
 	ChainResponsibleFor string
 	Intake              int
+}
+
+type PeakIntakeStruct struct {
+	Chain  string    `json:"chain"`
+	Amount int       `json:"amount"`
+	Time   time.Time `json:"time"`
 }
