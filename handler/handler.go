@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"log"
 	"markov-generator/commands"
 	"markov-generator/global"
 	"markov-generator/platform"
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
 	"markov-generator/platform/twitter"
+	"markov-generator/stats"
 	"strings"
 	"sync"
 	"time"
@@ -25,14 +25,14 @@ var (
 )
 
 func MsgHandler(c chan platform.Message) {
-	//go outputTicker()
+	go outputTicker()
 	for msg := range c {
 		if msg.Platform == "twitch" {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
-				go markov.Input(msg.ChannelName, newMessage)
-				//go responseWarden(msg.ChannelName, msg.Content)
-				//go discordWarden(msg.ChannelName)
+				go markov.In(msg.ChannelName, newMessage)
+				go responseWarden(msg.ChannelName, msg.Content)
+				go discordWarden(msg.ChannelName)
 			}
 			continue
 		} else if msg.Platform == "discord" {
@@ -66,13 +66,12 @@ func discordGuard(channel string) {
 		Method: "LikelyBeginning",
 	}
 
-	output, problem := markov.Output(oi)
+	output, err := markov.Out(oi)
 
-	if problem == "" {
+	if err == nil {
 		if !RandomlyPickLongerSentences(output) {
 			recurse(channel)
 		} else {
-			log.Println(channel + ": " + output)
 			OutputHandler("discordWarden", channel, output)
 		}
 	} else {
@@ -110,36 +109,27 @@ func responseWarden(channel string, message string) {
 					return
 				}
 
-				log.Println("Response activated in", directive.ChannelName)
-
 				chainToUse := directive.ChannelName
 
 				if random {
 					chainToUse = GetRandomChannel(directive.ChannelName)
 				}
 
-				log.Println("Random opted:", random)
-				log.Println("Chain to use:", chainToUse)
-
 				s := strings.Split(message, " ")
 				t := global.PickRandomFromSlice(s)
-
-				log.Println("Message used:", message)
-				log.Println("Target chosen:", t)
 
 				oi := markov.OutputInstructions{
 					Method: "TargetedBeginning",
 					Chain:  chainToUse,
 					Target: t,
 				}
-				output, problem := markov.Output(oi)
+				output, err := markov.Out(oi)
 
-				if problem != "" {
-					log.Println("Problem found:", problem)
-					discord.Say("error-tracking", problem)
-				} else {
-					log.Println("Response to use:", output)
+				if err == nil {
 					OutputHandler("responseGuard", channel, output)
+				} else {
+					stats.Log(err.Error())
+					discord.Say("error-tracking", err.Error())
 				}
 				return
 			}
@@ -148,11 +138,6 @@ func responseWarden(channel string, message string) {
 }
 
 func OutputHandler(origin string, channel string, message string) {
-	if origin == "api" {
-		log.Println("api output triggered", channel, message)
-		defer log.Println("api output finished", channel, message)
-	}
-
 	str := "Channel: " + channel + "\nMessage: " + message
 	discord.Say("all", str)
 	discord.Say(channel, message)

@@ -1,88 +1,39 @@
 package markov
 
-import (
-	"time"
-)
-
 var (
 	writeMode       string
 	writeInterval   int
 	intervalUnit    string
-	WriteCountLimit int
+	WriteInputLimit int
 	startKey        string
 	endKey          string
-	Debug           bool
-
-	nextWriteTime   time.Time
-	chainPeakIntake struct {
-		Chain  string
-		Amount int
-		Time   time.Time
-	}
+	debug           bool
 )
 
-// Start initializes the Markov  package.
-//
-// Takes:
-//		StartInstructions {
-//			WriteMode     string
-//			WriteInterval int
-//			IntervalUnit  string
-//			WriteLimit    int
-//			StartKey      string
-//			EndKey        string
-//			Debug         bool
-// 		}
-func Start(instructions StartInstructions) {
+// Start starts markov based on instructions provided.
+func Start(sI StartInstructions) error {
+	writeMode = sI.WriteMode
+	writeInterval = sI.WriteInterval
+	intervalUnit = sI.IntervalUnit
+	WriteInputLimit = sI.WriteLimit
+	startKey = sI.StartKey
+	endKey = sI.EndKey
+	debug = sI.Debug
+
 	createChainsFolder()
-
-	writeMode = instructions.WriteMode
-	writeInterval = instructions.WriteTicker
-	intervalUnit = instructions.TickerUnit
-	WriteCountLimit = instructions.WriteLimit
-	startKey = instructions.StartKey
-	endKey = instructions.EndKey
-	Debug = instructions.Debug
-
-	toWorker = make(chan input)
 
 	startWorkers()
 
-	go distributor()
-
-	if writeMode == "ticker" {
+	if writeMode == "interval" {
 		go writeTicker()
 	}
+
+	return nil
 }
 
-func writeCounter() {
-	if writeMode == "counter" {
-		CurrentCount += 1
-		if CurrentCount > WriteCountLimit {
-			go writeLoop()
-			CurrentCount = 0
-		}
-	}
-}
-
-func writeTicker() {
-	var unit time.Duration
-
-	switch intervalUnit {
-	default:
-		unit = time.Minute
-	case "seconds":
-		unit = time.Second
-	case "minutes":
-		unit = time.Minute
-	case "hours":
-		unit = time.Hour
-	}
-
-	nextWriteTime = time.Now().Add(time.Duration(writeInterval) * unit)
-	debugLog("write ticker started")
-	for range time.Tick(time.Duration(writeInterval) * unit) {
-		nextWriteTime = time.Now().Add(time.Duration(writeInterval) * unit)
-		writeLoop()
+func startWorkers() {
+	chains := chains()
+	for _, name := range chains {
+		newWorker(name)
 	}
 }

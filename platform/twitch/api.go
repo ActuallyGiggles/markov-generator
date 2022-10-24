@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"markov-generator/global"
-	"markov-generator/terminal"
+	"markov-generator/stats"
 	"net/http"
 )
 
@@ -22,20 +22,20 @@ func GetBroadcasterInfo(channel string) (data Data, err error) {
 	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
-		log.Println("	GetBroadcasterID failed\n", err)
+		stats.Log("GetBroadcasterID failed\n", err.Error())
 		return d, err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("	GetBroadcasterID failed\n", err)
+		stats.Log("GetBroadcasterID failed\n", err.Error())
 		return d, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	broadcaster := Broadcaster[Data]{}
 	if err := json.Unmarshal(body, &broadcaster); err != nil {
-		log.Println("	GetBroadcasterID failed\n", err)
+		stats.Log("GetBroadcasterID failed\n", err.Error())
 		return d, err
 	}
 	for _, v := range broadcaster.Data {
@@ -115,14 +115,14 @@ func getTwitchChannelEmotes() {
 		if err != nil {
 			log.Printf("\t getTwitchChannelEmotes failed\n")
 			log.Printf("\t For channel %s\n1", ID)
-			log.Println(err)
+			stats.Log(err.Error())
 		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Printf("\t getTwitchChannelEmotes failed\n")
 			log.Printf("\t For channel %s\n2", ID)
-			log.Println(err)
+			stats.Log(err.Error())
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -130,7 +130,7 @@ func getTwitchChannelEmotes() {
 		if err := json.Unmarshal(body, &emotes); err != nil {
 			log.Printf("\t getTwitchChannelEmotes failed\n")
 			log.Printf("\t For channel %s\n3", ID)
-			log.Println(err)
+			stats.Log(err.Error())
 		}
 
 		for _, emote := range emotes.Data {
@@ -384,18 +384,18 @@ func GetLiveStatus(channelName string) (live bool) {
 	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	var stream StreamStatusData
 	if err := json.Unmarshal(body, &stream); err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 	}
 	if len(stream.Data) == 0 {
 		return false
@@ -411,5 +411,4 @@ func GetLiveStatuses() {
 		r := GetLiveStatus(channel.ChannelName)
 		IsLive[channel.ChannelName] = r
 	}
-	terminal.UpdateTerminal("live")
 }

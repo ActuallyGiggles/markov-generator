@@ -1,162 +1,134 @@
 package markov
 
 import (
-	"runtime/debug"
+	"fmt"
 	"sync"
-	"time"
 )
 
 var (
-	workerMap    = make(map[string]*worker)
-	workerMapMx  sync.Mutex
-	toWorker     chan input
-	CurrentCount int
+	workerMap   = make(map[string]*worker)
+	workerMapMx sync.Mutex
 )
 
-func startWorkers() {
-	chains := chains()
-	for _, name := range chains {
-		newWorker(name)
-	}
-}
-
 func newWorker(name string) *worker {
-	w := &worker{
-		ChainResponsibleFor: name,
-		ChainToWrite:        make(map[string]map[string]map[string]int),
+	var w *worker
+	w = &worker{
+		Name:  name,
+		Chain: chain{},
 	}
 
 	workerMapMx.Lock()
 	workerMap[name] = w
 	workerMapMx.Unlock()
 
-	w.Status = "Ready"
-	w.LastModified = now()
-	debugLog("Created worker:", name)
-
 	return w
 }
 
-func distributor() {
-	for in := range toWorker {
-		//if in.Chain != "hasanabi" {
-		//	continue
-		//}
+func (w *worker) addInput(content string) {
+	w.ChainMx.Lock()
+	defer w.ChainMx.Unlock()
 
-		if in.Content == "" {
-			debugLog("empty muthafuckin uhhhhhh content yo", in.Chain, in.Content)
-			continue
-		}
-
-		//debugLog("distributor locks", in.Chain)
-		workerMapMx.Lock()
-		worker, ok := workerMap[in.Chain]
-		workerMapMx.Unlock()
-		//debugLog("distributor unlocks", in.Chain)
-
-		if worker.Status == "Ready" {
-			if ok {
-				go worker.addToQueue(in.Chain, in.Content)
-			} else {
-				worker = newWorker(in.Chain)
-				go worker.addToQueue(in.Chain, in.Content)
-			}
-		}
-	}
-}
-
-func (w *worker) addToQueue(chain string, content string) {
-	w.ChainToWriteMx.Lock()
-	//debugLog("addToQueue locks", w.ChainResponsibleFor)
-
-	contentToChain(&w.ChainToWrite, chain, content)
+	contentToChain(&w.Chain, w.Name, content)
 	w.Intake += 1
-
-	w.ChainToWriteMx.Unlock()
-	//debugLog("addToQueue unlocks", w.ChainResponsibleFor)
-
-	writeCounter()
 }
 
-func writeLoop() {
-	debugLog("write loop started")
-	defer debugLog("write loop done")
-	//writing := 0
-	for _, w := range workerMap {
-		if w.Intake == 0 || w.Status == "Writing" {
-			continue
-		}
+func (w *worker) writeToFile() {
+	defer duration(track(w.Name))
 
-		if w.Intake > chainPeakIntake.Amount {
-			chainPeakIntake.Chain = w.ChainResponsibleFor
-			chainPeakIntake.Amount = w.Intake
-			chainPeakIntake.Time = time.Now()
-		}
+	w.ChainMx.Lock()
+	defer w.ChainMx.Unlock()
 
-		// if writing >= len(workerMap)/2 {
-		// 	w.writeToChain()
-		// 	writing = 0
-		// 	continue
-		// }
+	eC, err := jsonToChain(w.Name)
+	if err != nil {
+		fmt.Println(err)
+		chainToJson(w.Chain, w.Name)
+		w.Intake = 0
+		w.Chain = chain{}
+	} else {
+		var chainToWrite chain
 
-		w.writeToChain()
+		for _, nParent := range w.Chain.Parents {
+			parentMatch := false
+			for eParentIndex, eParent := range eC.Parents {
+				if eParent.Word == nParent.Word {
+					parentMatch = true
 
-		//writing += 1
-	}
-}
+					uParent := parent{
+						Word: eParent.Word,
+					}
 
-func (w *worker) writeToChain() {
-	defer duration(track(w.ChainResponsibleFor))
+					for _, nChild := range nParent.Next {
+						childMatch := false
+						for eChildIndex, eChild := range eParent.Next {
+							if eChild.Word == nChild.Word {
+								childMatch = true
 
-	w.ChainToWriteMx.Lock()
-	debugLog("writeToChain locks", w.ChainResponsibleFor)
+								uParent.Next = append(uParent.Next, word{
+									Word:  eChild.Word,
+									Value: eChild.Value + nChild.Value,
+								})
 
-	w.Status = "Writing"
-	w.LastModified = now()
-	path := "./markov/chains/" + w.ChainResponsibleFor + ".json"
+								eParent.Next = removeCorGP(eParent.Next, eChildIndex)
+							}
+						}
+						if !childMatch {
+							uParent.Next = append(uParent.Next, nChild)
+						}
+					}
 
-	existingChain, chainExists := jsonToChain(path)
-	if !chainExists {
-		existingChain = make(map[string]map[string]map[string]int)
-		debugLog("CHAIN CREATED FOR", w.ChainResponsibleFor)
-	}
+					for _, eChild := range eParent.Next {
+						uParent.Next = append(uParent.Next, eChild)
+					}
 
-	for currentParent, currentParentValue := range w.ChainToWrite {
-		if _, ok := existingChain[currentParent]; !ok {
-			existingChain[currentParent] = make(map[string]map[string]int)
-		}
-		for currentList, currentListValue := range currentParentValue {
-			if _, ok := existingChain[currentParent][currentList]; !ok {
-				existingChain[currentParent][currentList] = make(map[string]int)
+					for _, nGrandparent := range nParent.Previous {
+						GrandparentMatch := false
+						for eGrandparentIndex, eGrandparent := range eParent.Previous {
+							if eGrandparent.Word == nGrandparent.Word {
+								GrandparentMatch = true
+
+								uParent.Previous = append(uParent.Previous, word{
+									Word:  eGrandparent.Word,
+									Value: eGrandparent.Value + nGrandparent.Value,
+								})
+
+								eParent.Previous = removeCorGP(eParent.Previous, eGrandparentIndex)
+							}
+						}
+						if !GrandparentMatch {
+							uParent.Previous = append(uParent.Previous, nGrandparent)
+						}
+					}
+
+					for _, eGrandparent := range eParent.Previous {
+						uParent.Previous = append(uParent.Previous, eGrandparent)
+					}
+
+					chainToWrite.Parents = append(chainToWrite.Parents, uParent)
+					eC.Parents = removeParent(eC.Parents, eParentIndex)
+				}
 			}
-			for currentChild, currentTimesUsed := range currentListValue {
-				existingChain[currentParent][currentList][currentChild] += currentTimesUsed
+			if !parentMatch {
+				chainToWrite.Parents = append(chainToWrite.Parents, nParent)
 			}
 		}
+
+		for _, eParent := range eC.Parents {
+			chainToWrite.Parents = append(chainToWrite.Parents, eParent)
+		}
+
+		chainToJson(chainToWrite, w.Name)
+		w.Intake = 0
+		w.Chain = chain{}
 	}
-
-	chainToJson(existingChain, path)
-
-	w.ChainToWrite = make(map[string]map[string]map[string]int)
-	w.Intake = 0
-	w.Status = "Ready"
-	w.LastModified = now()
-
-	w.ChainToWriteMx.Unlock()
-	debugLog("writeToChain unlocks", w.ChainResponsibleFor)
-
-	debug.FreeOSMemory()
 }
 
-// WorkersStats returns a slice of type WorkerStats
+// WorkersStats returns a slice of type WorkerStats.
 func WorkersStats() (slice []WorkerStats) {
 	workerMapMx.Lock()
 	for _, w := range workerMap {
 		e := WorkerStats{
-			ChainResponsibleFor: w.ChainResponsibleFor,
+			ChainResponsibleFor: w.Name,
 			Intake:              w.Intake,
-			Status:              w.Status,
-			LastModified:        w.LastModified,
 		}
 		slice = append(slice, e)
 	}

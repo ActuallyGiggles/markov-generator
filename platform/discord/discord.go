@@ -5,6 +5,7 @@ import (
 	"markov-generator/global"
 	"markov-generator/platform"
 	"markov-generator/platform/twitter"
+	"markov-generator/stats"
 	"sync"
 
 	"strings"
@@ -41,8 +42,6 @@ func Start(ch chan platform.Message, wg *sync.WaitGroup) {
 
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
-
-	log.Println("Discord started")
 }
 
 // messageHandler receives messages and sends them into the in channel.
@@ -72,7 +71,7 @@ func reactionHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 func SayByID(channelId string, message string) (id *discordgo.Message) {
 	m, err := discord.ChannelMessageSend(channelId, wrapInCodeBlock(message))
 	if err != nil {
-		log.Println("	SayById failed \n", err)
+		stats.Log("SayById failed \n" + err.Error())
 		return
 	}
 	return m
@@ -83,7 +82,7 @@ func Say(channel string, message string) {
 		if k == channel {
 			_, err := discord.ChannelMessageSend(v, wrapInCodeBlock(message))
 			if err != nil {
-				log.Println("Say failed \n", err)
+				stats.Log("Say failed \n" + err.Error())
 			}
 		}
 	}
@@ -111,7 +110,7 @@ func GetChannels(session *discordgo.Session) (channels []*discordgo.Channel, err
 func CreateDiscordChannel(name string) (channel *discordgo.Channel, ok bool) {
 	c, err := discord.GuildChannelCreate(global.DiscordGuildID, name, discordgo.ChannelTypeGuildText)
 	if err != nil {
-		log.Println("	CreateDiscordChannel failed\n", err)
+		stats.Log("CreateDiscordChannel failed\n" + err.Error())
 		return nil, false
 	}
 	return c, true
@@ -125,7 +124,7 @@ func DeleteDiscordChannel(name string) (ok bool) {
 		if c.ChannelName == name {
 			_, err := discord.ChannelDelete(c.ChannelID)
 			if err != nil {
-				log.Println("	DeleteDiscordChannel failed\n", err)
+				stats.Log("DeleteDiscordChannel failed\n" + err.Error())
 			}
 		}
 	}
@@ -135,7 +134,7 @@ func DeleteDiscordChannel(name string) (ok bool) {
 func DeleteDiscordMessage(channelID string, messageID string) {
 	err := discord.ChannelMessageDelete(channelID, messageID)
 	if err != nil {
-		log.Println("	DeleteDiscordChannel failed\n", err)
+		stats.Log("DeleteDiscordChannel failed\n" + err.Error())
 	}
 }
 
@@ -177,11 +176,11 @@ func GetDirectivesAndResources(session *discordgo.Session) (ok bool) {
 
 	if !doBannedUsersExist {
 		createResource("banned-users")
-		log.Println("Created banned-users.")
+		stats.Log("Created banned-users.")
 	}
 	if !doesRegexExist {
 		createResource("regex")
-		log.Println("Created regex.")
+		stats.Log("Created regex.")
 	}
 
 	return true
@@ -219,7 +218,7 @@ func manuallyTweet(r *discordgo.MessageReactionAdd) {
 	// If message was sent by bot
 	messageInfo, err := discord.ChannelMessage(r.ChannelID, r.MessageID)
 	if err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 		return
 	}
 	if messageInfo.Author.ID != global.DiscordBotID {

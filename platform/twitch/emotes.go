@@ -1,9 +1,8 @@
 package twitch
 
 import (
-	"log"
 	"markov-generator/global"
-	"markov-generator/terminal"
+	"markov-generator/stats"
 	"sync"
 )
 
@@ -38,22 +37,22 @@ func GetEmoteController(isInit bool) (ok bool) {
 	} else {
 		err := getBroadcasterIDs()
 		if err != nil {
-			log.Println(err)
+			stats.Log(err.Error())
 			return false
 		}
 		err = get7tvChannelEmotes()
 		if err != nil {
-			log.Println(err)
+			stats.Log(err.Error())
 			return false
 		}
 		err = getBttvChannelEmotes()
 		if err != nil {
-			log.Println(err)
+			stats.Log(err.Error())
 			return false
 		}
 		err = getFfzChannelEmotes()
 		if err != nil {
-			log.Println(err)
+			stats.Log(err.Error())
 			return false
 		}
 		global.ChannelEmotesMx.Lock()
@@ -61,7 +60,6 @@ func GetEmoteController(isInit bool) (ok bool) {
 		cleanAndTransferChannelEmotes()
 	}
 
-	terminal.UpdateTerminal("emotes")
 	return true
 }
 

@@ -3,7 +3,7 @@ package global
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"markov-generator/stats"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -55,6 +55,6 @@ func PickRandomFromSlice(slice []string) string {
 
 func RecoverFullName(functionName string) {
 	if r := recover(); r != nil {
-		log.Println("recovered '"+functionName+"' from ", r)
+		stats.Log("recovered '" + functionName)
 	}
 }

@@ -3,10 +3,9 @@ package twitter
 import (
 	"context"
 	"fmt"
-	"log"
 	"markov-generator/global"
 	"markov-generator/platform/twitch"
-	"strings"
+	"markov-generator/stats"
 	"sync"
 	"time"
 
@@ -33,8 +32,6 @@ func Start() {
 	}
 
 	go pickTweet()
-
-	log.Println("Twitter started")
 }
 
 func SendTweet(channel string, message string) {
@@ -46,7 +43,7 @@ func SendTweet(channel string, message string) {
 
 	message = fmt.Sprintf("%s\n\n#%sChatSays\n#ShitTwitchChatSays", message, channel)
 
-	log.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
+	//log.Println(fmt.Sprintf("Tweet: \n\tChannel: %s \n\tMessage: %s", channel, strings.ReplaceAll(message, "ChatSays \n", "ChatSays ")))
 
 	p := &types.CreateInput{
 		Text: gotwi.String(message),
@@ -54,7 +51,7 @@ func SendTweet(channel string, message string) {
 
 	_, err := managetweet.Create(context.Background(), client, p)
 	if err != nil {
-		log.Println(err.Error())
+		stats.Log(err.Error())
 		return
 	}
 }
@@ -74,7 +71,7 @@ func pickTweet() {
 	for range time.Tick(30 * time.Minute) {
 		channel, message, empty := PickRandomFromMap(potentialTweets)
 		if empty {
-			log.Println("Empty map.")
+			stats.Log("Empty map.")
 		} else {
 			SendTweet(channel, message)
 		}

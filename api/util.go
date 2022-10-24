@@ -1,11 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"markov-generator/handler"
-	"markov-generator/markov"
 	"sync"
 	"time"
+
+	"markov-generator/markov"
 )
 
 var (
@@ -44,19 +44,16 @@ func limitEndpoint(timer int, endpoint string) bool {
 		endpointLimit = 10
 	}
 	if limit[endpoint] > endpointLimit {
-		fmt.Println(endpoint, "not passed", limit[endpoint])
 		limitMx.Unlock()
 		return false
 	}
 	limit[endpoint] += 1
-	fmt.Println(endpoint, "passed", limit[endpoint])
 	limitMx.Unlock()
 	go func(timer int) {
 		time.Sleep(time.Duration(timer * 1e9))
 		limitMx.Lock()
 		limit[endpoint] -= 1
 		limitMx.Unlock()
-		fmt.Println(endpoint, "cleared by 1", limit[endpoint])
 	}(timer)
 	return true
 }
@@ -73,9 +70,9 @@ func guard(channel string, c chan string) {
 		Chain:  channel,
 		Method: "LikelyBeginning",
 	}
-	output, problem := markov.Output(oi)
+	output, problem := markov.Out(oi)
 
-	if problem == "" {
+	if problem == nil {
 		if !handler.RandomlyPickLongerSentences(output) {
 			recurse(channel, output, c)
 			return

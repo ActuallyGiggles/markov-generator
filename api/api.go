@@ -7,6 +7,7 @@ import (
 	"markov-generator/handler"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
+	"markov-generator/stats"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
@@ -17,8 +18,24 @@ import (
 )
 
 var (
-	in chan platform.Message
+	in           chan platform.Message
+	websiteHits  int
+	sentenceHits int
 )
+
+func HandleRequests() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", homePage)
+	mux.HandleFunc("/tracked-channels", trackedChannels)
+	mux.HandleFunc("/live-channels", liveChannels)
+	mux.HandleFunc("/tracked-emotes", trackedEmotes)
+	mux.HandleFunc("/get-sentence", getSentence)
+	mux.HandleFunc("/server-stats", serverStats)
+	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
+
+	handler := cors.AllowAll().Handler(mux)
+	http.ListenAndServe(":10000", handler)
+}
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit homePage Endpoint")
@@ -83,6 +100,7 @@ func trackedChannels(w http.ResponseWriter, r *http.Request) {
 }
 
 func liveChannels(w http.ResponseWriter, r *http.Request) {
+	websiteHits += 1
 	log.Println("Hit liveChannels Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -130,6 +148,7 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSentence(w http.ResponseWriter, r *http.Request) {
+	sentenceHits += 1
 	log.Println("Hit getSentence Endpoint")
 	w.Header().Set("Content-Type", "application/json")
 	method := r.URL.Query().Get("method")
@@ -248,16 +267,33 @@ func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func HandleRequests() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", homePage)
-	mux.HandleFunc("/tracked-channels", trackedChannels)
-	mux.HandleFunc("/live-channels", liveChannels)
-	mux.HandleFunc("/tracked-emotes", trackedEmotes)
-	mux.HandleFunc("/get-sentence", getSentence)
-	//mux.HandleFunc("/twitch-broadcaster-info", getTwitchBroadcasterInfo)
+func serverStats(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit getServerStats Endpoint")
+	w.Header().Set("Content-Type", "application/json")
 
-	handler := cors.AllowAll().Handler(mux)
-	log.Println("API started")
-	http.ListenAndServe(":10000", handler)
+	if limitEndpoint(1, "serverStats") {
+		access := r.URL.Query().Get("access")
+
+		if access != "security-omegalul" {
+			err := struct {
+				Error string
+			}{}
+			err.Error = "Incorrect security code"
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+
+		s := stats.GetStats()
+
+		s.WebsiteHits = websiteHits
+		s.SentenceHits = sentenceHits
+
+		json.NewEncoder(w).Encode(s)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 1 second"
+		json.NewEncoder(w).Encode(err)
+	}
 }

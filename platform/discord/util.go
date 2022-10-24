@@ -3,6 +3,7 @@ package discord
 import (
 	"log"
 	"markov-generator/global"
+	"markov-generator/stats"
 	"strconv"
 	"strings"
 
@@ -147,7 +148,7 @@ func createResource(resourceType string) {
 func updateChannelTopic(discordChannelID string, topic string) (channel *discordgo.Channel, ok bool) {
 	ch, err := discord.Channel(discordChannelID)
 	if err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 		return nil, false
 	}
 
@@ -160,7 +161,7 @@ func updateChannelTopic(discordChannelID string, topic string) (channel *discord
 
 	channel, err = discord.ChannelEdit(discordChannelID, &update)
 	if err != nil {
-		log.Println(err)
+		stats.Log(err.Error())
 		return nil, false
 	}
 
