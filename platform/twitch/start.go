@@ -18,7 +18,7 @@ func GatherEmotes() {
 }
 
 func updateLiveStatuses() {
-	for range time.Tick(30 * time.Second) {
+	for range time.Tick(2 * time.Minute) {
 		GetLiveStatuses()
 	}
 }

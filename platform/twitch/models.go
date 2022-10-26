@@ -77,6 +77,6 @@ type StreamStatusData struct {
 }
 
 type StreamStatusActual struct {
-	Name string `json:"user_name"`
+	Name string `json:"user_login"`
 	Type string `json:"type"`
 }

@@ -25,7 +25,7 @@ func chains() []string {
 	if err != nil {
 		return s
 	}
-  
+
 	for _, file := range files {
 		s = append(s, strings.TrimSuffix(file.Name(), ".json"))
 	}
@@ -62,7 +62,7 @@ func chainToJson(c chain, name string) {
 		debugLog(err)
 	}
 
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		debugLog(err)
 	}
@@ -75,7 +75,7 @@ func chainToJson(c chain, name string) {
 	} else {
 		debugLog("wrote successfully to", path)
 	}
-  
+
 }
 
 func PrettyPrint(v interface{}) {
