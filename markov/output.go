@@ -16,6 +16,10 @@ func Out(oi OutputInstructions) (output string, err error) {
 	method := oi.Method
 	target := oi.Target
 
+	if workerMap[name] == nil {
+		return
+	}
+
 	workerMap[name].ChainMx.RLock()
 	defer workerMap[name].ChainMx.RUnlock()
 

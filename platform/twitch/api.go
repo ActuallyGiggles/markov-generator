@@ -390,6 +390,7 @@ func GetLiveStatus(channelName string) (live bool) {
 	resp, err := client.Do(req)
 	if err != nil {
 		stats.Log(err.Error())
+		return
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
