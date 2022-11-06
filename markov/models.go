@@ -42,23 +42,22 @@ type OutputInstructions struct {
 type worker struct {
 	Name    string
 	Chain   chain
-	ChainMx sync.Mutex
+	ChainMx sync.RWMutex
 	Intake  int
 }
 
 type chain struct {
-	Parents []parent `json:"parents"`
+	Parents []parent
 }
 
 type parent struct {
-	Word     string `json:"word"`
-	Next     []word `json:"next"`
-	Previous []word `json:"previous"`
+	Word     string
+	Children []child
 }
 
-type word struct {
-	Word  string `json:"word"`
-	Value int    `json:"value"`
+type child struct {
+	Word  string
+	Value int
 }
 
 type input struct {

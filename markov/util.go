@@ -161,7 +161,7 @@ func pickRandomFromSlice(slice []string) string {
 	return slice[randomNumber(0, len(slice))]
 }
 
-func removeCorGP(s []word, i int) []word {
+func removeChild(s []child, i int) []child {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
 }

@@ -72,7 +72,7 @@ func Start() {
 
 	i := markov.StartInstructions{
 		WriteMode:  "counter",
-		WriteLimit: 10000,
+		WriteLimit: 1000,
 		StartKey:   "b5G(n1$I!4g",
 		EndKey:     "e1$D(n7",
 		Debug:      false,

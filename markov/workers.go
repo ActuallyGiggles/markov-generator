@@ -1,7 +1,9 @@
 package markov
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -38,88 +40,169 @@ func (w *worker) writeToFile() {
 	w.ChainMx.Lock()
 	defer w.ChainMx.Unlock()
 
-	eC, err := jsonToChain(w.Name)
-	if err != nil {
-		fmt.Println(err)
-		chainToJson(w.Chain, w.Name)
-		w.Intake = 0
-		w.Chain = chain{}
-	} else {
-		var chainToWrite chain
+	// Specify updated list of parents
+	var updatedChain []parent
 
-		for _, nParent := range w.Chain.Parents {
+	// Open existing chain file
+	f, err := os.OpenFile("./markov-chains/"+w.Name+".json", os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	} else {
+		// Start a new decoder
+		dec := json.NewDecoder(f)
+
+		// Get beginning token
+		_, err = dec.Token()
+		if err != nil {
+			chainData, _ := json.MarshalIndent(w.Chain.Parents, "", "    ")
+			f.Write(chainData)
+			f.Close()
+			return
+		}
+
+		// For every new item in the existing chain
+		for dec.More() {
+			var existingParent parent
+
+			err = dec.Decode(&existingParent)
+			if err != nil {
+				panic(err)
+			}
+
 			parentMatch := false
-			for eParentIndex, eParent := range eC.Parents {
-				if eParent.Word == nParent.Word {
+			// Find newParent in existingParents
+			for nPIndex := 0; nPIndex < len(w.Chain.Parents); nPIndex++ {
+				newParent := &w.Chain.Parents[nPIndex]
+				if newParent.Word == existingParent.Word {
 					parentMatch = true
 
 					uParent := parent{
-						Word: eParent.Word,
+						Word: newParent.Word,
 					}
 
-					for _, nChild := range nParent.Next {
+					// combine values and set into updatedChain
+					for eCIndex := 0; eCIndex < len(existingParent.Children); eCIndex++ {
+						existingChild := &existingParent.Children[eCIndex]
 						childMatch := false
-						for eChildIndex, eChild := range eParent.Next {
-							if eChild.Word == nChild.Word {
+						for nCIndex := 0; nCIndex < len(newParent.Children); nCIndex++ {
+							newChild := &newParent.Children[nCIndex]
+							if newChild.Word == existingChild.Word {
 								childMatch = true
 
-								uParent.Next = append(uParent.Next, word{
-									Word:  eChild.Word,
-									Value: eChild.Value + nChild.Value,
+								uParent.Children = append(uParent.Children, child{
+									Word:  newChild.Word,
+									Value: newChild.Value + existingChild.Value,
 								})
 
-								eParent.Next = removeCorGP(eParent.Next, eChildIndex)
+								newParent.Children = removeChild(newParent.Children, nCIndex)
+								break
 							}
 						}
+
 						if !childMatch {
-							uParent.Next = append(uParent.Next, nChild)
+							uParent.Children = append(uParent.Children, *existingChild)
 						}
 					}
 
-					for _, eChild := range eParent.Next {
-						uParent.Next = append(uParent.Next, eChild)
+					for _, newChild := range newParent.Children {
+						uParent.Children = append(uParent.Children, newChild)
 					}
 
-					for _, nGrandparent := range nParent.Previous {
-						GrandparentMatch := false
-						for eGrandparentIndex, eGrandparent := range eParent.Previous {
-							if eGrandparent.Word == nGrandparent.Word {
-								GrandparentMatch = true
+					updatedChain = append(updatedChain, uParent)
 
-								uParent.Previous = append(uParent.Previous, word{
-									Word:  eGrandparent.Word,
-									Value: eGrandparent.Value + nGrandparent.Value,
-								})
-
-								eParent.Previous = removeCorGP(eParent.Previous, eGrandparentIndex)
-							}
-						}
-						if !GrandparentMatch {
-							uParent.Previous = append(uParent.Previous, nGrandparent)
-						}
-					}
-
-					for _, eGrandparent := range eParent.Previous {
-						uParent.Previous = append(uParent.Previous, eGrandparent)
-					}
-
-					chainToWrite.Parents = append(chainToWrite.Parents, uParent)
-					eC.Parents = removeParent(eC.Parents, eParentIndex)
+					w.Chain.Parents = removeParent(w.Chain.Parents, nPIndex)
+					break
 				}
 			}
+
 			if !parentMatch {
-				chainToWrite.Parents = append(chainToWrite.Parents, nParent)
+				updatedChain = append(updatedChain, existingParent)
 			}
 		}
 
-		for _, eParent := range eC.Parents {
-			chainToWrite.Parents = append(chainToWrite.Parents, eParent)
+		for _, nParent := range w.Chain.Parents {
+			updatedChain = append(updatedChain, nParent)
 		}
-
-		chainToJson(chainToWrite, w.Name)
-		w.Intake = 0
-		w.Chain = chain{}
 	}
+
+	// Close the chain file
+	f.Close()
+
+	// Open file again
+	f, err = os.OpenFile("./markov-chains/"+w.Name+".json", os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	}
+
+	// Indent and write
+	chainData, err := json.MarshalIndent(updatedChain, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	_, err = f.Write(chainData)
+	if err != nil {
+		fmt.Println(err)
+	}
+	f.Close()
+
+	// eC, err := jsonToChain(w.Name)
+	// if err != nil {
+	// 	chainToJson(w.Chain, w.Name)
+	// 	w.Intake = 0
+	// 	w.Chain = chain{}
+	// } else {
+	// 	var chainToWrite chain
+
+	// 	for _, nParent := range w.Chain.Parents {
+	// 		parentMatch := false
+	// 		for eParentIndex, eParent := range eC.Parents {
+	// 			if eParent.Word == nParent.Word {
+	// 				parentMatch = true
+
+	// 				uParent := parent{
+	// 					Word: eParent.Word,
+	// 				}
+
+	// 				for _, nChild := range nParent.Children {
+	// 					childMatch := false
+	// 					for eChildIndex, eChild := range eParent.Children {
+	// 						if eChild.Word == nChild.Word {
+	// 							childMatch = true
+
+	// 							uParent.Children = append(uParent.Children, child{
+	// 								Word:  eChild.Word,
+	// 								Value: eChild.Value + nChild.Value,
+	// 							})
+
+	// 							eParent.Children = removeChild(eParent.Children, eChildIndex)
+	// 						}
+	// 					}
+	// 					if !childMatch {
+	// 						uParent.Children = append(uParent.Children, nChild)
+	// 					}
+	// 				}
+
+	// 				for _, eChild := range eParent.Children {
+	// 					uParent.Children = append(uParent.Children, eChild)
+	// 				}
+
+	// 				chainToWrite.Parents = append(chainToWrite.Parents, uParent)
+	// 				eC.Parents = removeParent(eC.Parents, eParentIndex)
+	// 			}
+	// 		}
+	// 		if !parentMatch {
+	// 			chainToWrite.Parents = append(chainToWrite.Parents, nParent)
+	// 		}
+	// 	}
+
+	// 	for _, eParent := range eC.Parents {
+	// 		chainToWrite.Parents = append(chainToWrite.Parents, eParent)
+	// 	}
+
+	// 	chainToJson(chainToWrite, w.Name)
+	// 	w.Intake = 0
+	// 	w.Chain = chain{}
+	// }
 }
 
 // WorkersStats returns a slice of type WorkerStats.

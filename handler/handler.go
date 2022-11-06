@@ -75,6 +75,9 @@ func discordGuard(channel string) {
 			OutputHandler("discordWarden", channel, output)
 		}
 	} else {
+		if strings.Contains(err.Error(), "The system cannot find the file specified.") {
+			return
+		}
 		recurse(channel)
 	}
 	return
@@ -128,6 +131,9 @@ func responseWarden(channel string, message string) {
 				if err == nil {
 					OutputHandler("responseGuard", channel, output)
 				} else {
+					if strings.Contains(err.Error(), "The system cannot find the file specified.") {
+						return
+					}
 					stats.Log(err.Error())
 					discord.Say("error-tracking", err.Error())
 				}
