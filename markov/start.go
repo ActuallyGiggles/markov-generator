@@ -4,10 +4,12 @@ var (
 	writeMode       string
 	writeInterval   int
 	intervalUnit    string
-	WriteInputLimit int
+	writeInputLimit int
 	startKey        string
 	endKey          string
 	debug           bool
+
+	stats Statistics
 )
 
 // Start starts markov based on instructions provided.
@@ -15,12 +17,14 @@ func Start(sI StartInstructions) error {
 	writeMode = sI.WriteMode
 	writeInterval = sI.WriteInterval
 	intervalUnit = sI.IntervalUnit
-	WriteInputLimit = sI.WriteLimit
+	writeInputLimit = sI.WriteLimit
 	startKey = sI.StartKey
 	endKey = sI.EndKey
 	debug = sI.Debug
 
-	createChainsFolder()
+	createFolders()
+
+	loadStats()
 
 	startWorkers()
 
@@ -29,11 +33,4 @@ func Start(sI StartInstructions) error {
 	}
 
 	return nil
-}
-
-func startWorkers() {
-	chains := chains()
-	for _, name := range chains {
-		newWorker(name)
-	}
 }

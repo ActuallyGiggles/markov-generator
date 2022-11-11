@@ -36,48 +36,6 @@ func now() string {
 	return time.Now().Format("15:04:05")
 }
 
-func jsonToChain(name string) (c chain, err error) {
-	path := "./markov-chains/" + name + ".json"
-	file, err := os.Open(path)
-	if err != nil {
-		debugLog("Failed reading "+name+":", err)
-		return chain{}, err
-	}
-	defer file.Close()
-
-	err = json.NewDecoder(file).Decode(&c)
-	if err != nil {
-		debugLog("Error when unmarshalling "+name+":", path, "\n", err)
-		return chain{}, err
-	}
-
-	return c, nil
-}
-
-func chainToJson(c chain, name string) {
-	path := "./markov-chains/" + name + ".json"
-
-	chainData, err := json.MarshalIndent(c, "", " ")
-	if err != nil {
-		debugLog(err)
-	}
-
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		debugLog(err)
-	}
-
-	_, err = f.Write(chainData)
-	f.Close()
-	if err != nil {
-		debugLog("wrote unsuccessfully to", path)
-		debugLog(err)
-	} else {
-		debugLog("wrote successfully to", path)
-	}
-
-}
-
 func PrettyPrint(v interface{}) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
@@ -111,17 +69,17 @@ func WriteMode() (mode string) {
 
 // TimeUntilWrite returns the duration until the next write cycle.
 func TimeUntilWrite() time.Duration {
-	return nextWriteTime.Sub(time.Now())
+	return stats.NextWriteTime.Sub(time.Now())
 }
 
 // NextWriteTime returns what time the next write cycle will happen.
 func NextWriteTime() time.Time {
-	return nextWriteTime
+	return stats.NextWriteTime
 }
 
 // PeakIntake returns the highest intake across all workers per session and at what time it happened.
 func PeakIntake() PeakIntakeStruct {
-	return peakChainIntake
+	return stats.PeakChainIntake
 }
 
 func weightedRandom(itemsAndWeights []wRand) string {
@@ -141,10 +99,18 @@ func weightedRandom(itemsAndWeights []wRand) string {
 	return fmt.Sprintf("%v", choice.Item)
 }
 
-func createChainsFolder() {
-	_, dberr := os.Stat("./markov-chains")
-	if os.IsNotExist(dberr) {
+func createFolders() {
+	_, err := os.Stat("./markov-chains")
+	if os.IsNotExist(err) {
 		err := os.MkdirAll("./markov-chains", 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	_, err = os.Stat("./markov-chains/stats")
+	if os.IsNotExist(err) {
+		err := os.MkdirAll("./markov-chains/stats", 0755)
 		if err != nil {
 			panic(err)
 		}

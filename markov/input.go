@@ -23,11 +23,17 @@ func In(chainName string, content string) {
 	writeCounter()
 }
 
-func contentToChain(c *chain, name string, content string) {
-	slice := prepareContentForChainProcessing(content)
+func (w *worker) addInput(content string) {
+	w.ChainMx.Lock()
+	defer w.ChainMx.Unlock()
 
-	extractStartAndSaveToChain(c, name, slice)
-	extractAndSaveToChain(c, name, slice)
+	slice := prepareContentForChainProcessing(content)
+	extractStartAndSaveToChain(&w.Chain, w.Name, slice)
+	extractAndSaveToChain(&w.Chain, w.Name, slice)
+
+	w.Intake++
+	stats.LifetimeInputs++
+	stats.SessionInputs++
 }
 
 func prepareContentForChainProcessing(content string) []string {

@@ -6,6 +6,7 @@ import (
 	"markov-generator/platform"
 	"markov-generator/platform/twitter"
 	"markov-generator/stats"
+	"strconv"
 	"sync"
 
 	"strings"
@@ -42,6 +43,23 @@ func Start(ch chan platform.Message, wg *sync.WaitGroup) {
 
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
+
+	go memoryMonitor()
+}
+
+func memoryMonitor() {
+	for range time.Tick(10 * time.Second) {
+		mem := stats.MemUsage()
+
+		var allocated = int(mem.Allocated)
+		var system = int(mem.System)
+		sAllocated := strconv.Itoa(allocated)
+		sSystem := strconv.Itoa(system)
+
+		if allocated > 1000 || system > 5000 {
+			SayMention("error-tracking", "<@247905755808792580>", "> Memory usage is exceeding expectations! \n > \n > Allocated -> `"+sAllocated+"` \n > System -> `"+sSystem+"`")
+		}
+	}
 }
 
 // messageHandler receives messages and sends them into the in channel.
@@ -84,6 +102,21 @@ func Say(channel string, message string) {
 			if err != nil {
 				stats.Log("Say failed \n" + err.Error())
 			}
+			return
+		}
+	}
+	return
+}
+
+func SayMention(channel string, mention string, message string) {
+	for k, v := range global.TotalChannels {
+		if k == channel {
+			content := mention + "\n" + message
+			_, err := discord.ChannelMessageSend(v, content)
+			if err != nil {
+				stats.Log("Say failed \n" + err.Error())
+			}
+			return
 		}
 	}
 	return

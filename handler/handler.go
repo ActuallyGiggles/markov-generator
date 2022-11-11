@@ -32,7 +32,6 @@ func MsgHandler(c chan platform.Message) {
 			if passed {
 				go markov.In(msg.ChannelName, newMessage)
 				go responseWarden(msg.ChannelName, msg.Content)
-				go discordWarden(msg.ChannelName)
 			}
 			continue
 		} else if msg.Platform == "discord" {
@@ -46,17 +45,19 @@ func outputTicker() {
 	for range time.Tick(5 * time.Minute) {
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
-			time.Sleep(5 * time.Second)
-			discordWarden(chain)
+			if chain == "actuallygiggles" {
+				return
+			}
+			discordGuard(chain)
 		}
 	}
 }
 
 func discordWarden(channel string) {
-	if !lockChannel(60, channel) {
+	if !lockChannel(120, channel) {
 		return
 	}
-	go discordGuard(channel)
+	discordGuard(channel)
 	return
 }
 

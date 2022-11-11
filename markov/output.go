@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-var TotalOutputs int
-
 // Out takes output instructions and returns an output and error.
 func Out(oi OutputInstructions) (output string, err error) {
 	name := oi.Chain
 	method := oi.Method
 	target := oi.Target
+
+	defer duration(track("OUTPUT: " + name))
 
 	if workerMap[name] == nil {
 		return
@@ -31,7 +31,8 @@ func Out(oi OutputInstructions) (output string, err error) {
 	}
 
 	if err == nil {
-		TotalOutputs += 1
+		stats.LifetimeOutputs++
+		stats.SessionOutputs++
 	}
 
 	return output, err
