@@ -57,18 +57,11 @@ func Start() {
 	go twitter.Start()
 	stats.Log("Twitter started")
 
-	go handler.MsgHandler(c)
-	stats.Log("Handler started")
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go discord.Start(c, &wg)
 	stats.Log("Discord started")
 	wg.Wait()
-
-	stats.Log("Gathering emotes")
-	twitch.GatherEmotes()
-	stats.Log("Gathered emotes")
 
 	i := markov.StartInstructions{
 		WriteMode:     "interval",
@@ -76,10 +69,17 @@ func Start() {
 		IntervalUnit:  "minutes",
 		StartKey:      "b5G(n1$I!4g",
 		EndKey:        "e1$D(n7",
-		Debug:         true,
+		Debug:         false,
 	}
 	markov.Start(i)
 	stats.Log("Markov started")
+
+	go handler.MsgHandler(c)
+	stats.Log("Handler started")
+
+	stats.Log("Gathering emotes")
+	twitch.GatherEmotes()
+	stats.Log("Gathered emotes")
 
 	go api.HandleRequests()
 	stats.Log("API started")

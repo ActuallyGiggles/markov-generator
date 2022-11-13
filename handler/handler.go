@@ -46,9 +46,9 @@ func outputTicker() {
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
 			if chain == "actuallygiggles" {
-				return
+				continue
 			}
-			discordGuard(chain)
+			go discordGuard(chain)
 		}
 	}
 }
