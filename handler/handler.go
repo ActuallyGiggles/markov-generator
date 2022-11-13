@@ -48,7 +48,7 @@ func outputTicker() {
 			if chain == "actuallygiggles" {
 				continue
 			}
-			go discordGuard(chain)
+			discordGuard(chain)
 		}
 	}
 }
