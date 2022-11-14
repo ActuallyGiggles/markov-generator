@@ -14,9 +14,8 @@ var (
 	BotName string
 
 	// Twitch API information
-	TwitchBotOauth    string
-	TwitchAccessToken string
-	TwitchClientID    string
+	TwitchOAuth    string
+	TwitchClientID string
 
 	// Youtube API information
 	YoutubeAPIKey       string
@@ -61,8 +60,7 @@ func Start() {
 	BotName = os.Getenv("BOT_NAME")
 
 	// Twitch
-	TwitchBotOauth = os.Getenv("TWITCH_BOT_OAUTH")
-	TwitchAccessToken = os.Getenv("TWITCH_ACCESS_TOKEN")
+	TwitchOAuth = os.Getenv("TWITCH_OAUTH")
 	TwitchClientID = os.Getenv("TWITCH_CLIENT_ID")
 
 	// Discord

@@ -19,7 +19,7 @@ func GetBroadcasterInfo(channel string) (data Data, err error) {
 	d := Data{}
 	var jsonStr = []byte(`{"":""}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
+	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
 		stats.Log("GetBroadcasterID failed\n", err.Error())
@@ -33,6 +33,9 @@ func GetBroadcasterInfo(channel string) (data Data, err error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		log.Println("GetBroadcasterID failed (StatusCode not 200) for ", "'"+channel+"'", "\n"+string(body))
+	}
 	broadcaster := Broadcaster[Data]{}
 	if err := json.Unmarshal(body, &broadcaster); err != nil {
 		stats.Log("GetBroadcasterID failed\n", err.Error())
@@ -68,6 +71,7 @@ func getBroadcasterIDs() (err error) {
 
 	Broadcasters = make(map[string]Data)
 	Broadcasters = temp
+
 	return nil
 }
 
@@ -76,7 +80,7 @@ func getTwitchGlobalEmotes() {
 
 	var jsonStr = []byte(`{"":""}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
+	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
 		panic(err)
@@ -110,7 +114,7 @@ func getTwitchChannelEmotes() {
 
 		var jsonStr = []byte(`{"":""}`)
 		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-		req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
+		req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 		req.Header.Set("Client-Id", global.TwitchClientID)
 		if err != nil {
 			log.Printf("\t getTwitchChannelEmotes failed\n")
@@ -126,6 +130,9 @@ func getTwitchChannelEmotes() {
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			log.Println("GetTwitchChannelEmotes failed (StatusCode not 200) for ", d.Login, "\n"+string(body))
+		}
 		emotes := TwitchEmoteAPIResponse[TwitchChannelEmote]{}
 		if err := json.Unmarshal(body, &emotes); err != nil {
 			log.Printf("\t getTwitchChannelEmotes failed\n")
@@ -381,7 +388,7 @@ func GetLiveStatus(channelName string) (live bool) {
 	url := "https://api.twitch.tv/helix/streams?user_login=" + channelName
 	var jsonStr = []byte(`{"":""}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("Authorization", "Bearer "+global.TwitchAccessToken)
+	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
 	if err != nil {
 		stats.Log(err.Error())

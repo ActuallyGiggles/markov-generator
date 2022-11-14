@@ -13,7 +13,7 @@ var client *twitch.Client
 func Start(in chan platform.Message) {
 	// Make unexported client use the address for the initialized client
 	client = &twitch.Client{}
-	client = twitch.NewClient(global.BotName, global.TwitchBotOauth)
+	client = twitch.NewClient(global.BotName, "oauth:"+global.TwitchOAuth)
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := platform.Message{

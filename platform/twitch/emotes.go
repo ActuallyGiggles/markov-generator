@@ -24,6 +24,7 @@ func GetEmoteController(isInit bool) (ok bool) {
 	if isInit {
 		global.ChannelEmotesMx.Lock()
 		defer global.ChannelEmotesMx.Unlock()
+
 		getBroadcasterIDs()
 		getTwitchGlobalEmotes()
 		getTwitchChannelEmotes()
