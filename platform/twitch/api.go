@@ -30,6 +30,7 @@ func GetBroadcasterInfo(channelName string) (data Data, err error) {
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		stats.Log("GetBroadcasterID failed\n", err.Error())
 		return d, err
@@ -73,6 +74,7 @@ func getTwitchGlobalEmotes() {
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		panic(err)
 	}
@@ -105,6 +107,7 @@ func getTwitchChannelEmotes(c Data) (err error) {
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		return err
 	}

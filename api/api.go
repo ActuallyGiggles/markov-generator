@@ -136,7 +136,8 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 		allEmotes := struct {
 			Global []global.Emote `json:"global"`
 		}{}
-		allEmotes.Global = global.GlobalEmotes
+		allEmotes.Global = append(allEmotes.Global, global.GlobalEmotes...)
+		allEmotes.Global = append(allEmotes.Global, global.TwitchChannelEmotes...)
 		json.NewEncoder(w).Encode(allEmotes)
 	} else {
 		err := struct {
