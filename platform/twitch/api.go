@@ -3,6 +3,7 @@ package twitch
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"markov-generator/global"
@@ -10,14 +11,22 @@ import (
 	"net/http"
 )
 
-// GetTwitchBroadcasterID gets a broadcaster's twitch ID.
-//
-// Returns the ID and whether function was successful.
-func GetBroadcasterInfo(channel string) (data Data, err error) {
-	url := "https://api.twitch.tv/helix/users?login=" + channel
+func routineBroadcastersUpdate(directive global.Directive) (err error) {
+	data, err := GetBroadcasterInfo(directive.ChannelName)
+	if err == nil {
+		Broadcasters[directive.ChannelName] = data
+	} else {
+		return err
+	}
+
+	return nil
+}
+
+func GetBroadcasterInfo(channelName string) (data Data, err error) {
+	url := "https://api.twitch.tv/helix/users?login=" + channelName
 
 	d := Data{}
-	var jsonStr = []byte(`{"":""}`)
+	var jsonStr = []byte(`{"content-type":"application/json"}`)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
 	req.Header.Set("Client-Id", global.TwitchClientID)
@@ -34,7 +43,7 @@ func GetBroadcasterInfo(channel string) (data Data, err error) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		log.Println("GetBroadcasterID failed (StatusCode not 200) for ", "'"+channel+"'", "\n"+string(body))
+		log.Println("GetBroadcasterID failed (StatusCode not 200) for", "'"+channelName+"'", "\n"+string(body))
 	}
 	broadcaster := Broadcaster[Data]{}
 	if err := json.Unmarshal(body, &broadcaster); err != nil {
@@ -55,24 +64,6 @@ func GetBroadcasterInfo(channel string) (data Data, err error) {
 		d.CreatedAt = v.CreatedAt
 	}
 	return d, nil
-}
-
-func getBroadcasterIDs() (err error) {
-	temp := make(map[string]Data)
-
-	for _, channel := range global.Directives {
-		data, err := GetBroadcasterInfo(channel.ChannelName)
-		if err == nil {
-			temp[channel.ChannelName] = data
-		} else {
-			return err
-		}
-	}
-
-	Broadcasters = make(map[string]Data)
-	Broadcasters = temp
-
-	return nil
 }
 
 func getTwitchGlobalEmotes() {
@@ -103,52 +94,45 @@ func getTwitchGlobalEmotes() {
 			Url:  emote.Images["url_4x"],
 		}
 
-		global.GlobalEmotes = append(global.GlobalEmotes, e)
+		globalEmotesToUpdate = append(globalEmotesToUpdate, e)
 	}
 }
 
-func getTwitchChannelEmotes() {
-	for _, d := range Broadcasters {
-		ID := d.ID
-		url := "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + ID
+func getTwitchChannelEmotes(c Data) (err error) {
+	url := "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + c.ID
 
-		var jsonStr = []byte(`{"":""}`)
-		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-		req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
-		req.Header.Set("Client-Id", global.TwitchClientID)
-		if err != nil {
-			log.Printf("\t getTwitchChannelEmotes failed\n")
-			log.Printf("\t For channel %s\n1", ID)
-			stats.Log(err.Error())
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("\t getTwitchChannelEmotes failed\n")
-			log.Printf("\t For channel %s\n2", ID)
-			stats.Log(err.Error())
-		}
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
-			log.Println("GetTwitchChannelEmotes failed (StatusCode not 200) for ", d.Login, "\n"+string(body))
-		}
-		emotes := TwitchEmoteAPIResponse[TwitchChannelEmote]{}
-		if err := json.Unmarshal(body, &emotes); err != nil {
-			log.Printf("\t getTwitchChannelEmotes failed\n")
-			log.Printf("\t For channel %s\n3", ID)
-			stats.Log(err.Error())
-		}
-
-		for _, emote := range emotes.Data {
-			e := global.Emote{
-				Name: emote.Name,
-				Url:  emote.Images["url_4x"],
-			}
-
-			global.GlobalEmotes = append(global.GlobalEmotes, e)
-		}
+	var jsonStr = []byte(`{"":""}`)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Authorization", "Bearer "+global.TwitchOAuth)
+	req.Header.Set("Client-Id", global.TwitchClientID)
+	if err != nil {
+		return err
 	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return errors.New("GetTwitchChannelEmotes failed (StatusCode not 200) for " + c.Login + "\n" + string(body))
+	}
+	emotes := TwitchEmoteAPIResponse[TwitchChannelEmote]{}
+	if err := json.Unmarshal(body, &emotes); err != nil {
+		return err
+	}
+
+	for _, emote := range emotes.Data {
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  emote.Images["url_4x"],
+		}
+
+		twitchChannelEmotesToUpdate = append(twitchChannelEmotesToUpdate, e)
+	}
+
+	return nil
 }
 
 func get7tvGlobalEmotes() {
@@ -177,42 +161,41 @@ func get7tvGlobalEmotes() {
 			Url:  emote.Urls[3][1],
 		}
 
-		global.GlobalEmotes = append(global.GlobalEmotes, e)
+		globalEmotesToUpdate = append(globalEmotesToUpdate, e)
 	}
 }
 
-func get7tvChannelEmotes() (err error) {
-	for _, channel := range global.Directives {
-		url := "https://api.7tv.app/v2/users/" + channel.ChannelName + "/emotes"
+func get7tvChannelEmotes(c Data) (err error) {
+	url := "https://api.7tv.app/v2/users/" + c.Login + "/emotes"
 
-		var jsonStr = []byte(`{"":""}`)
-		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-		if err != nil {
-			return err
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode >= http.StatusBadRequest {
-			continue
-		}
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		emotes := []SevenTVEmote{}
-		if err := json.Unmarshal(body, &emotes); err != nil {
-			return err
-		}
-
-		for _, emote := range emotes {
-			e := global.Emote{
-				Name: emote.Name,
-				Url:  emote.Urls[3][1],
-			}
-			thirdPartyChannelEmotesToUpdate[channel.ChannelName] = append(thirdPartyChannelEmotesToUpdate[channel.ChannelName], e)
-		}
+	var jsonStr = []byte(`{"":""}`)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		return err
 	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		// User not registered for 7tv
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	emotes := []SevenTVEmote{}
+	if err := json.Unmarshal(body, &emotes); err != nil {
+		return err
+	}
+
+	for _, emote := range emotes {
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  emote.Urls[3][1],
+		}
+		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
+	}
+
 	return nil
 }
 
@@ -242,50 +225,46 @@ func getBttvGlobalEmotes() {
 			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
 		}
 
-		global.GlobalEmotes = append(global.GlobalEmotes, e)
+		globalEmotesToUpdate = append(globalEmotesToUpdate, e)
 	}
 }
 
-func getBttvChannelEmotes() (err error) {
-	for _, d := range Broadcasters {
-		ID := d.ID
-		user := d.Login
-		url := "https://api.betterttv.net/3/cached/users/twitch/" + ID
+func getBttvChannelEmotes(c Data) (err error) {
+	url := "https://api.betterttv.net/3/cached/users/twitch/" + c.ID
 
-		var jsonStr = []byte(`{"":""}`)
-		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-		if err != nil {
-			return err
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode >= http.StatusBadRequest {
-			continue
-		}
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		emotes := BttvChannelEmotes[BttvEmote]{}
-		if err := json.Unmarshal(body, &emotes); err != nil {
-			return err
-		}
+	var jsonStr = []byte(`{"":""}`)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		// User not registered for 7tv
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	emotes := BttvChannelEmotes[BttvEmote]{}
+	if err := json.Unmarshal(body, &emotes); err != nil {
+		return err
+	}
 
-		for _, emote := range emotes.ChannelEmotes {
-			e := global.Emote{
-				Name: emote.Name,
-				Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
-			}
-			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
+	for _, emote := range emotes.ChannelEmotes {
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
 		}
-		for _, emote := range emotes.SharedEmotes {
-			e := global.Emote{
-				Name: emote.Name,
-				Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
-			}
-			thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
+		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
+	}
+	for _, emote := range emotes.SharedEmotes {
+		e := global.Emote{
+			Name: emote.Name,
+			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
 		}
+		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
 	}
 	return nil
 }
@@ -328,57 +307,53 @@ func getFfzGlobalEmotes() {
 					break
 				}
 			}
-			global.GlobalEmotes = append(global.GlobalEmotes, e)
+			globalEmotesToUpdate = append(globalEmotesToUpdate, e)
 		}
 	}
 }
 
-func getFfzChannelEmotes() (err error) {
-	for _, d := range Broadcasters {
-		ID := d.ID
-		user := d.Login
-		url := "https://api.frankerfacez.com/v1/room/id/" + ID
+func getFfzChannelEmotes(c Data) (err error) {
+	url := "https://api.frankerfacez.com/v1/room/id/" + c.ID
 
-		var jsonStr = []byte(`{"":""}`)
-		req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
-		if err != nil {
-			return err
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode >= http.StatusBadRequest {
-			continue
-		}
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		set := FfzSets{}
-		if err := json.Unmarshal(body, &set); err != nil {
-			return err
-		}
+	var jsonStr = []byte(`{"":""}`)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		// User not registered for 7tv
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	set := FfzSets{}
+	if err := json.Unmarshal(body, &set); err != nil {
+		return err
+	}
 
-		for _, emotes := range set.Sets {
-			for _, emote := range emotes.Emoticons {
-				e := global.Emote{
-					Name: emote.Name,
-				}
-				for size, url := range emote.Urls {
-					switch size {
-					case "4":
-						e.Url = "https:" + url
-						break
-					case "2":
-						e.Url = "https:" + url
-						break
-					case "1":
-						e.Url = "https:" + url
-						break
-					}
-				}
-				thirdPartyChannelEmotesToUpdate[user] = append(thirdPartyChannelEmotesToUpdate[user], e)
+	for _, emotes := range set.Sets {
+		for _, emote := range emotes.Emoticons {
+			e := global.Emote{
+				Name: emote.Name,
 			}
+			for size, url := range emote.Urls {
+				switch size {
+				case "4":
+					e.Url = "https:" + url
+					break
+				case "2":
+					e.Url = "https:" + url
+					break
+				case "1":
+					e.Url = "https:" + url
+					break
+				}
+			}
+			thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
 		}
 	}
 	return nil

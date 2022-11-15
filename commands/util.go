@@ -53,7 +53,7 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 
 	go discord.SayByID(returnChannelID, "Gathering emotes for "+channelName)
 	twitch.GetLiveStatuses()
-	ok := twitch.GetEmoteController(false)
+	ok := twitch.GetEmoteController(false, channel)
 	if ok {
 		twitch.Join(channelName)
 		go discord.SayByID(returnChannelID, channelName+" added successfully.")

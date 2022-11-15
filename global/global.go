@@ -24,8 +24,9 @@ var (
 
 	// Emote list
 	GlobalEmotes            []Emote
+	TwitchChannelEmotes     []Emote
 	ThirdPartyChannelEmotes map[string][]Emote
-	ChannelEmotesMx         sync.Mutex
+	EmotesMx                sync.Mutex
 
 	// Discord variables
 	DiscordToken        string

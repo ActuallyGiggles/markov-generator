@@ -1,6 +1,7 @@
 package twitch
 
 import (
+	"markov-generator/global"
 	"sync"
 	"time"
 )
@@ -12,7 +13,7 @@ var (
 
 func GatherEmotes() {
 	GetLiveStatuses()
-	GetEmoteController(true)
+	GetEmoteController(true, global.Directive{})
 	go updateLiveStatuses()
 	go refreshEmotes()
 }
@@ -24,7 +25,7 @@ func updateLiveStatuses() {
 }
 
 func refreshEmotes() {
-	for range time.Tick(10 * time.Minute) {
-		GetEmoteController(false)
+	for range time.Tick(30 * time.Minute) {
+		GetEmoteController(false, global.Directive{})
 	}
 }

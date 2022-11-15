@@ -22,8 +22,8 @@ func prepareMessage(msg platform.Message) (processed string, passed bool) {
 
 // lowercaseIfNotEmote takes channel and string and returns the string with everything lowercase except any emotes from that channel.
 func lowercaseIfNotEmote(channel string, message string) string {
-	global.ChannelEmotesMx.Lock()
-	defer global.ChannelEmotesMx.Unlock()
+	global.EmotesMx.Lock()
+	defer global.EmotesMx.Unlock()
 	var new []string
 	slice := strings.Split(message, " ")
 	for _, word := range slice {
@@ -35,13 +35,27 @@ func lowercaseIfNotEmote(channel string, message string) string {
 				break
 			}
 		}
-		for _, emote := range global.ThirdPartyChannelEmotes[channel] {
-			if word == emote.Name {
-				match = true
-				new = append(new, word)
-				break
+
+		if !match {
+			for _, emote := range global.TwitchChannelEmotes {
+				if word == emote.Name {
+					match = true
+					new = append(new, word)
+					break
+				}
 			}
 		}
+
+		if !match {
+			for _, emote := range global.ThirdPartyChannelEmotes[channel] {
+				if word == emote.Name {
+					match = true
+					new = append(new, word)
+					break
+				}
+			}
+		}
+
 		if !match {
 			new = append(new, strings.ToLower(word))
 		}
