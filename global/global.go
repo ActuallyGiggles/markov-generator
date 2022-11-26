@@ -25,7 +25,7 @@ var (
 	// Emote list
 	GlobalEmotes            []Emote
 	TwitchChannelEmotes     []Emote
-	ThirdPartyChannelEmotes map[string][]Emote
+	ThirdPartyChannelEmotes []ThirdPartyEmotes
 	EmotesMx                sync.Mutex
 
 	// Discord variables
@@ -75,9 +75,6 @@ func Start() {
 	// Twitter
 	TwitterAccessToken = os.Getenv("TWITTER_ACCESS_TOKEN")
 	TwitterAccessTokenSecret = os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
-
-	// Initialize ThirdParyChannelEmotes map
-	ThirdPartyChannelEmotes = make(map[string][]Emote)
 
 	// LoadDirective()
 	// LoadStatisticsJson()

@@ -70,10 +70,10 @@ func saveStats() {
 	defer f.Close()
 
 	if err != nil {
-		debugLog("wrote unsuccessfully to", "./markov-chains/stats/stats.json")
+		//debugLog("wrote unsuccessfully to", "./markov-chains/stats/stats.json")
 		debugLog(err)
 	} else {
-		debugLog("wrote successfully to", "./markov-chains/stats/stats.json")
+		//debugLog("wrote successfully to", "./markov-chains/stats/stats.json")
 	}
 }
 

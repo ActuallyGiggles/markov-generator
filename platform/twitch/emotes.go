@@ -8,14 +8,12 @@ import (
 )
 
 var (
-	Broadcasters   map[string]Data
+	Broadcasters   = make(map[string]Data)
 	broadcastersMx sync.Mutex
 
-	globalEmotesToUpdate []global.Emote
-
-	twitchChannelEmotesToUpdate []global.Emote
-
-	thirdPartyChannelEmotesToUpdate   map[string][]global.Emote
+	globalEmotesToUpdate              []global.Emote
+	twitchChannelEmotesToUpdate       []global.Emote
+	thirdPartyChannelEmotesToUpdate   []global.ThirdPartyEmotes
 	thirdPartyChannelEmotesToUpdateMx sync.Mutex
 )
 
@@ -24,9 +22,6 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 	thirdPartyChannelEmotesToUpdateMx.Lock()
 	defer broadcastersMx.Unlock()
 	defer thirdPartyChannelEmotesToUpdateMx.Unlock()
-	Broadcasters = make(map[string]Data)
-	globalEmotesToUpdate = nil
-	thirdPartyChannelEmotesToUpdate = make(map[string][]global.Emote)
 	Broadcasters = make(map[string]Data)
 
 	if channel.ChannelName == "" {
@@ -66,6 +61,7 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 		for _, emote := range twitchChannelEmotesToUpdate {
 			global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, emote) // Add each twitch channel emote
 		}
+		twitchChannelEmotesToUpdate = nil
 
 		// Get 7tv emotes
 		err = get7tvChannelEmotes(data)
@@ -89,7 +85,12 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 		}
 
 		// Add each 7tv, BTTV, FFZ emote
-		global.ThirdPartyChannelEmotes[channel.ChannelName] = thirdPartyChannelEmotesToUpdate[channel.ChannelName]
+		e := global.ThirdPartyEmotes{
+			Name:   channel.ChannelName,
+			Emotes: thirdPartyChannelEmotesToUpdate[0].Emotes,
+		}
+		global.ThirdPartyChannelEmotes = append(global.ThirdPartyChannelEmotes, e)
+		thirdPartyChannelEmotesToUpdate = nil
 	}
 
 	return true
@@ -114,6 +115,7 @@ func transferGlobalEmotes() {
 		global.GlobalEmotes = append(global.GlobalEmotes, emote)
 		total++
 	}
+	globalEmotesToUpdate = nil
 	log.Printf("[Updated %d Global emotes]", total)
 }
 
@@ -124,15 +126,22 @@ func transferTwitchChannelEmotes() {
 		global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, emote)
 		total++
 	}
+	twitchChannelEmotesToUpdate = nil
 	log.Printf("[Updated %d Twitch Channel emotes]", total)
 }
 
 func transferThirdPartyEmotes() {
-	global.ThirdPartyChannelEmotes = make(map[string][]global.Emote)
+	global.ThirdPartyChannelEmotes = nil
 	total := 0
-	for channelName, emoteSlice := range thirdPartyChannelEmotesToUpdate {
-		global.ThirdPartyChannelEmotes[channelName] = emoteSlice
-		total += len(emoteSlice)
+	for _, channel := range thirdPartyChannelEmotesToUpdate {
+		e := global.ThirdPartyEmotes{
+			Name:   channel.Name,
+			Emotes: channel.Emotes,
+		}
+
+		global.ThirdPartyChannelEmotes = append(global.ThirdPartyChannelEmotes, e)
+		total += len(channel.Emotes)
 	}
+	thirdPartyChannelEmotesToUpdate = nil
 	log.Printf("[Updated %d Third Party emotes]", total)
 }

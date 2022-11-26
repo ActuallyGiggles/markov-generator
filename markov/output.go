@@ -16,12 +16,14 @@ func Out(oi OutputInstructions) (output string, err error) {
 
 	defer duration(track("OUTPUT: " + name))
 
-	if workerMap[name] == nil {
-		return
+	if exists := chainExists(name); !exists {
+		return "", errors.New("Chain '" + name + "' is not found in directory.")
 	}
 
-	workerMap[name].ChainMx.RLock()
-	defer workerMap[name].ChainMx.RUnlock()
+	if exists := workerExists(name); exists {
+		workerMap[name].ChainMx.RLock()
+		defer workerMap[name].ChainMx.RUnlock()
+	}
 
 	switch method {
 	case "LikelyBeginning":
@@ -40,11 +42,17 @@ func Out(oi OutputInstructions) (output string, err error) {
 
 func likelyBeginning(name string) (output string, err error) {
 	output = ""
-	p := startKey
 	c := ""
 
+	p, err := getStartWord(name)
+	if err != nil {
+		return "", err
+	}
+
+	output = strings.Split(p, " ")[0] + " "
+
 	for true {
-		f, err := os.Open("./markov-chains/" + name + ".json")
+		f, err := os.Open("./markov-chains/" + name + "_tail.json")
 		if err != nil {
 			return "", err
 		}
@@ -76,7 +84,6 @@ func likelyBeginning(name string) (output string, err error) {
 					parentSplit := strings.Split(p, " ")
 
 					if len(parentSplit) == 1 {
-						output = output + p
 						return output, nil
 					}
 
@@ -97,43 +104,6 @@ func likelyBeginning(name string) (output string, err error) {
 		}
 	}
 
-	// c, err := jsonToChain(name)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// for true {
-	// 	parentExists := false
-	// 	for _, cParent := range c.Parents {
-	// 		if cParent.Word == p {
-	// 			parentExists = true
-	// 			child = getNextWord(cParent)
-
-	// 			if child == endKey {
-	// 				parentSplit := strings.Split(p, " ")
-
-	// 				if len(parentSplit) == 1 {
-	// 					output = output + p
-	// 					return output, nil
-	// 				}
-
-	// 				output = output + parentSplit[1]
-	// 				return output, nil
-	// 			} else {
-	// 				childSplit := strings.Split(child, " ")
-	// 				output = output + childSplit[0] + " "
-
-	// 				p = child
-	// 				continue
-	// 			}
-	// 		}
-	// 	}
-
-	// 	if !parentExists {
-	// 		return output, errors.New(fmt.Sprintf("parent %s does not exist in chain %s", parent, name))
-	// 	}
-	// }
-
 	return output, nil
 }
 
@@ -142,14 +112,9 @@ func targetedBeginning(name string, target string) (output string, err error) {
 	p := ""
 	c := ""
 
-	// c, err := jsonToChain(name)
-	// if err != nil {
-	// 	return "", err
-	// }
+	var initialList []Choice
 
-	var initialList []string
-
-	f, err := os.Open("./markov-chains/" + name + ".json")
+	f, err := os.Open("./markov-chains/" + name + "_head.json")
 	if err != nil {
 		return "", err
 	}
@@ -162,7 +127,7 @@ func targetedBeginning(name string, target string) (output string, err error) {
 	}
 
 	for dec.More() {
-		var cP parent
+		var cP child
 
 		err = dec.Decode(&cP)
 		if err != nil {
@@ -172,7 +137,10 @@ func targetedBeginning(name string, target string) (output string, err error) {
 		potentialParentSplit := strings.Split(cP.Word, " ")
 
 		if potentialParentSplit[0] == target {
-			initialList = append(initialList, cP.Word)
+			initialList = append(initialList, Choice{
+				Word:   cP.Word,
+				Weight: cP.Value,
+			})
 		}
 	}
 
@@ -180,12 +148,15 @@ func targetedBeginning(name string, target string) (output string, err error) {
 		return "", errors.New(fmt.Sprintf("%s does not contain parents that match: %s", name, target))
 	}
 
-	p = pickRandomParent(initialList)
+	p, err = weightedRandom(initialList)
+	if err != nil {
+		return "", err
+	}
 	parentSplit := strings.Split(p, " ")
 	output = parentSplit[0] + " "
 
 	for true {
-		f, err := os.Open("./markov-chains/" + name + ".json")
+		f, err := os.Open("./markov-chains/" + name + "_tail.json")
 		if err != nil {
 			panic(err)
 		}
@@ -215,7 +186,6 @@ func targetedBeginning(name string, target string) (output string, err error) {
 					parentSplit := strings.Split(p, " ")
 
 					if len(parentSplit) == 1 {
-						output = output + p
 						return output, nil
 					}
 
@@ -236,75 +206,21 @@ func targetedBeginning(name string, target string) (output string, err error) {
 		}
 	}
 
-	// for true {
-	// 	parentExists := false
-	// 	for parentNumber, cParent := range c.Parents {
-	// 		if initial {
-	// 			if parentNumber >= len(c.Parents)-1 {
-	// 				initial = false
-	// 				parentExists = true
-	// 				if len(initialList) <= 0 {
-	// 					return "", errors.New(fmt.Sprintf("%s does not contain parents that match: %s", name, target))
-	// 				}
-	// 				parent = pickRandomParent(initialList)
-	// 				parentSplit := strings.Split(parent, " ")
-	// 				output = parentSplit[0] + " "
-	// 				break
-	// 			}
-
-	// 			potentialParentSplit := strings.Split(cParent.Word, " ")
-	// 			if potentialParentSplit[0] == target {
-	// 				initialList = append(initialList, cParent.Word)
-	// 				continue
-	// 			} else {
-	// 				continue
-	// 			}
-	// 		}
-
-	// 		if cParent.Word == parent {
-	// 			parentExists = true
-	// 			child = getNextWord(cParent)
-
-	// 			if child == endKey {
-	// 				parentSplit := strings.Split(parent, " ")
-
-	// 				if len(parentSplit) == 1 {
-	// 					output = output + parent
-	// 					return output, nil
-	// 				}
-
-	// 				output = output + parentSplit[1]
-	// 				return output, nil
-	// 			} else {
-	// 				childSplit := strings.Split(child, " ")
-	// 				output = output + childSplit[0] + " "
-
-	// 				parent = child
-	// 				continue
-	// 			}
-	// 		}
-	// 	}
-
-	// 	if !parentExists {
-	// 		return output, errors.New(fmt.Sprintf("%s does not contain parent: %s", name, parent))
-	// 	}
-	// }
-
 	return output, nil
 }
 
 func getNextWord(parent parent) (child string) {
-	var wrS []wRand
+	var wrS []Choice
 	for _, word := range parent.Children {
 		w := word.Word
 		v := word.Value
-		item := wRand{
-			Word:  w,
-			Value: v,
+		item := Choice{
+			Word:   w,
+			Weight: v,
 		}
 		wrS = append(wrS, item)
 	}
-	child = weightedRandom(wrS)
+	child, _ = weightedRandom(wrS)
 
 	return child
 }
@@ -313,4 +229,70 @@ func pickRandomParent(parents []string) (parent string) {
 	parent = pickRandomFromSlice(parents)
 
 	return parent
+}
+
+func getStartWord(name string) (phrase string, err error) {
+	var sum int
+
+	f, err := os.Open("./markov-chains/" + name + "_head.json")
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(f)
+	_, err = dec.Token()
+	if err != nil {
+		panic(err)
+	}
+
+	for dec.More() {
+		var child child
+
+		err = dec.Decode(&child)
+		if err != nil {
+			fmt.Println(name)
+			fmt.Println(child)
+			panic(err)
+		}
+
+		sum += child.Value
+	}
+
+	f.Close()
+
+	r, err := randomNumber(0, sum)
+	if err != nil {
+		return "", err
+	}
+
+	f, err = os.Open("./markov-chains/" + name + "_head.json")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	dec = json.NewDecoder(f)
+	_, err = dec.Token()
+	if err != nil {
+		panic(err)
+	}
+
+	for dec.More() {
+		var child child
+
+		err = dec.Decode(&child)
+		if err != nil {
+			fmt.Println(name)
+			fmt.Println(child)
+			panic(err)
+		}
+
+		r -= child.Value
+
+		if r < 0 {
+			return child.Word, nil
+		}
+	}
+
+	return "", errors.New("Internal error - code should not reach this point")
 }

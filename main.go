@@ -67,9 +67,11 @@ func Start() {
 		WriteMode:     "interval",
 		WriteInterval: 10,
 		IntervalUnit:  "minutes",
-		StartKey:      "b5G(n1$I!4g",
-		EndKey:        "e1$D(n7",
-		Debug:         false,
+		// WriteMode:  "counter",
+		// WriteLimit: 10,
+		StartKey: "b5G(n1$I!4g",
+		EndKey:   "e1$D(n7",
+		Debug:    false,
 	}
 	markov.Start(i)
 	stats.Log("Markov started")

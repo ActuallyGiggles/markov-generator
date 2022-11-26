@@ -15,6 +15,11 @@ func routineBroadcastersUpdate(directive global.Directive) (err error) {
 	data, err := GetBroadcasterInfo(directive.ChannelName)
 	if err == nil {
 		Broadcasters[directive.ChannelName] = data
+
+		e := global.ThirdPartyEmotes{
+			Name: directive.ChannelName,
+		}
+		thirdPartyChannelEmotesToUpdate = append(thirdPartyChannelEmotesToUpdate, e)
 	} else {
 		return err
 	}
@@ -191,12 +196,17 @@ func get7tvChannelEmotes(c Data) (err error) {
 		return err
 	}
 
-	for _, emote := range emotes {
-		e := global.Emote{
-			Name: emote.Name,
-			Url:  emote.Urls[3][1],
+	for i, channel := range thirdPartyChannelEmotesToUpdate {
+		if channel.Name == c.Login {
+			for _, emote := range emotes {
+				e := global.Emote{
+					Name: emote.Name,
+					Url:  emote.Urls[3][1],
+				}
+
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+			}
 		}
-		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
 	}
 
 	return nil
@@ -255,20 +265,25 @@ func getBttvChannelEmotes(c Data) (err error) {
 		return err
 	}
 
-	for _, emote := range emotes.ChannelEmotes {
-		e := global.Emote{
-			Name: emote.Name,
-			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+	for i, channel := range thirdPartyChannelEmotesToUpdate {
+		if channel.Name == c.Login {
+			for _, emote := range emotes.ChannelEmotes {
+				e := global.Emote{
+					Name: emote.Name,
+					Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+				}
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+			}
+			for _, emote := range emotes.SharedEmotes {
+				e := global.Emote{
+					Name: emote.Name,
+					Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
+				}
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+			}
 		}
-		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
 	}
-	for _, emote := range emotes.SharedEmotes {
-		e := global.Emote{
-			Name: emote.Name,
-			Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
-		}
-		thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
-	}
+
 	return nil
 }
 
@@ -338,27 +353,32 @@ func getFfzChannelEmotes(c Data) (err error) {
 		return err
 	}
 
-	for _, emotes := range set.Sets {
-		for _, emote := range emotes.Emoticons {
-			e := global.Emote{
-				Name: emote.Name,
-			}
-			for size, url := range emote.Urls {
-				switch size {
-				case "4":
-					e.Url = "https:" + url
-					break
-				case "2":
-					e.Url = "https:" + url
-					break
-				case "1":
-					e.Url = "https:" + url
-					break
+	for i, channel := range thirdPartyChannelEmotesToUpdate {
+		if channel.Name == c.Login {
+			for _, emotes := range set.Sets {
+				for _, emote := range emotes.Emoticons {
+					e := global.Emote{
+						Name: emote.Name,
+					}
+					for size, url := range emote.Urls {
+						switch size {
+						case "4":
+							e.Url = "https:" + url
+							break
+						case "2":
+							e.Url = "https:" + url
+							break
+						case "1":
+							e.Url = "https:" + url
+							break
+						}
+					}
+					thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
 				}
 			}
-			thirdPartyChannelEmotesToUpdate[c.Login] = append(thirdPartyChannelEmotesToUpdate[c.Login], e)
 		}
 	}
+
 	return nil
 }
 

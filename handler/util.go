@@ -47,11 +47,15 @@ func lowercaseIfNotEmote(channel string, message string) string {
 		}
 
 		if !match {
-			for _, emote := range global.ThirdPartyChannelEmotes[channel] {
-				if word == emote.Name {
-					match = true
-					new = append(new, word)
-					break
+			for _, channel := range global.ThirdPartyChannelEmotes {
+				if channel.Name == word {
+					for _, emote := range channel.Emotes {
+						if word == emote.Name {
+							match = true
+							new = append(new, word)
+							break
+						}
+					}
 				}
 			}
 		}
@@ -174,7 +178,7 @@ func RandomlyPickLongerSentences(sentence string) bool {
 	// If s does not exceed 1 word, give 25% chance of making it through
 	if !DoesSliceContainIndex(s, 1) {
 		n := global.RandomNumber(0, 100)
-		if n <= 50 {
+		if n <= 25 {
 			return false
 		}
 	}

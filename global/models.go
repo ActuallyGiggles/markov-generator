@@ -32,3 +32,8 @@ type Emote struct {
 	Name string
 	Url  string
 }
+
+type ThirdPartyEmotes struct {
+	Name   string
+	Emotes []Emote
+}

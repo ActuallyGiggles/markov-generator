@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"markov-generator/commands"
 	"markov-generator/global"
 	"markov-generator/platform"
@@ -25,13 +26,14 @@ var (
 )
 
 func MsgHandler(c chan platform.Message) {
-	go outputTicker()
+	//go outputTicker()
 	for msg := range c {
 		if msg.Platform == "twitch" {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
 				go markov.In(msg.ChannelName, newMessage)
 				go responseWarden(msg.ChannelName, msg.Content)
+				go discordWarden(msg.ChannelName)
 			}
 			continue
 		} else if msg.Platform == "discord" {
@@ -43,18 +45,24 @@ func MsgHandler(c chan platform.Message) {
 
 func outputTicker() {
 	for range time.Tick(5 * time.Minute) {
+		fmt.Println("Ticker started")
+
 		chains := markov.CurrentChains()
 		for _, chain := range chains {
 			if chain == "actuallygiggles" {
 				continue
 			}
+			fmt.Println(chain)
 			discordGuard(chain)
+			continue
 		}
+
+		fmt.Println("Ticker finished")
 	}
 }
 
 func discordWarden(channel string) {
-	if !lockChannel(120, channel) {
+	if !lockChannel(300, channel) {
 		return
 	}
 	discordGuard(channel)
@@ -76,7 +84,7 @@ func discordGuard(channel string) {
 			OutputHandler("discordWarden", channel, output)
 		}
 	} else {
-		if strings.Contains(err.Error(), "The system cannot find the file specified.") {
+		if strings.Contains(err.Error(), "not found in directory") {
 			return
 		}
 		recurse(channel)

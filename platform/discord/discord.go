@@ -56,7 +56,7 @@ func memoryMonitor() {
 		sAllocated := strconv.Itoa(allocated)
 		sSystem := strconv.Itoa(system)
 
-		if allocated > 1000 || system > 5000 {
+		if allocated > 500 || system > 5000 {
 			SayMention("error-tracking", "<@247905755808792580>", "> Memory usage is exceeding expectations! \n > \n > Allocated -> `"+sAllocated+"` \n > System -> `"+sSystem+"`")
 		}
 	}

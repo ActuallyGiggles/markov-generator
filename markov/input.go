@@ -18,15 +18,16 @@ func In(chainName string, content string) {
 		w = newWorker(chainName)
 	}
 
+	w.ChainMx.Lock()
+	//debugLog("Input Locked")
 	w.addInput(content)
+	w.ChainMx.Unlock()
+	//debugLog("Input Unlocked")
 
 	writeCounter()
 }
 
 func (w *worker) addInput(content string) {
-	w.ChainMx.Lock()
-	defer w.ChainMx.Unlock()
-
 	slice := prepareContentForChainProcessing(content)
 	extractStartAndSaveToChain(&w.Chain, w.Name, slice)
 	extractAndSaveToChain(&w.Chain, w.Name, slice)

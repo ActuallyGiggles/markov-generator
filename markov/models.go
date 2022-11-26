@@ -1,6 +1,8 @@
 package markov
 
 import (
+	"encoding/json"
+	"os"
 	"sync"
 	"time"
 )
@@ -65,11 +67,6 @@ type input struct {
 	Content string
 }
 
-type wRand struct {
-	Word  string
-	Value int
-}
-
 // WorkerStats contains the name of the chain the worker is responsible for and the intake amount in that worker.
 type WorkerStats struct {
 	ChainResponsibleFor string
@@ -80,4 +77,17 @@ type PeakIntakeStruct struct {
 	Chain  string    `json:"chain"`
 	Amount int       `json:"amount"`
 	Time   time.Time `json:"time"`
+}
+
+// A Choice contains a generic item and a weight controlling the frequency with
+// which it will be selected.
+type Choice struct {
+	Weight int
+	Word   string
+}
+
+type encode struct {
+	Encoder        *json.Encoder
+	File           *os.File
+	ContinuedEntry bool
 }

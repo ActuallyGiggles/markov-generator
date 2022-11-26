@@ -1,16 +1,16 @@
 package markov
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	"math/big"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/jmcvetta/randutil"
 )
 
 func debugLog(v ...any) {
@@ -19,17 +19,42 @@ func debugLog(v ...any) {
 	}
 }
 
-func chains() []string {
+// chains gets a list of current chains found in the directory.
+func chains() (chains []string) {
 	files, err := ioutil.ReadDir("./markov-chains/")
-	var s []string
 	if err != nil {
-		return s
+		return chains
 	}
 
 	for _, file := range files {
-		s = append(s, strings.TrimSuffix(file.Name(), ".json"))
+		if file.Name() == "stats" {
+			continue
+		}
+		t := strings.TrimSuffix(file.Name(), ".json")
+		chains = append(chains, t[:len(t)-5])
 	}
-	return s
+
+	return chains
+}
+
+// chainExists returns if a chain exists or not.
+func chainExists(name string) (exists bool) {
+	for _, c := range chains() {
+		if c == name {
+			return true
+		}
+	}
+	return false
+}
+
+// workerExists returns if a chain worker exists or not.
+func workerExists(name string) (exists bool) {
+	for _, c := range workerMap {
+		if c.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func now() string {
@@ -82,21 +107,30 @@ func PeakIntake() PeakIntakeStruct {
 	return stats.PeakChainIntake
 }
 
-func weightedRandom(itemsAndWeights []wRand) string {
-	var choices []randutil.Choice
-
-	for _, item := range itemsAndWeights {
-		word := item.Word
-		value := item.Value
-		choices = append(choices, randutil.Choice{Weight: value, Item: word})
+// weightedRandom used weighted random selection to return one of the supplied
+// choices.  Weights of 0 are never selected.  All other weight values are
+// relative.  E.g. if you have two choices both weighted 3, they will be
+// returned equally often; and each will be returned 3 times as often as a
+// choice weighted 1.
+func weightedRandom(choices []Choice) (string, error) {
+	// Based on this algorithm:
+	//     http://eli.thegreenplace.net/2010/01/22/weighted-random-generation-in-python/
+	sum := 0
+	for _, c := range choices {
+		sum += c.Weight
 	}
-
-	choice, err := randutil.WeightedChoice(choices)
+	r, err := randomNumber(0, sum)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-
-	return fmt.Sprintf("%v", choice.Item)
+	for _, c := range choices {
+		r -= c.Weight
+		if r < 0 {
+			return c.Word, nil
+		}
+	}
+	err = errors.New("Internal error - code should not reach this point")
+	return "", err
 }
 
 func createFolders() {
@@ -117,22 +151,86 @@ func createFolders() {
 	}
 }
 
-func randomNumber(min int, max int) (num int) {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	num = r.Intn(max-min) + min
-	return num
+// func removeChild(s []child, i int) []child {
+// 	s[i] = s[len(s)-1]
+// 	return s[:len(s)-1]
+// }
+
+func (p *parent) removeChild(i int) {
+	p.Children[i] = p.Children[len(p.Children)-1]
+	p.Children = p.Children[:len(p.Children)-1]
+}
+
+// func removeParent(s []parent, i int) []parent {
+// 	s[i] = s[len(s)-1]
+// 	return s[:len(s)-1]
+// }
+
+func (c *chain) removeParent(i int) {
+	c.Parents[i] = c.Parents[len(c.Parents)-1]
+	c.Parents = c.Parents[:len(c.Parents)-1]
 }
 
 func pickRandomFromSlice(slice []string) string {
-	return slice[randomNumber(0, len(slice))]
+	r, _ := randomNumber(0, len(slice))
+	return slice[r]
 }
 
-func removeChild(s []child, i int) []child {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
+// randomNumber returns a random integer in the range from min to max.
+func randomNumber(min, max int) (int, error) {
+	var result int
+	switch {
+	case min > max:
+		// Fail with error
+		return result, errors.New("Min cannot be greater than max.")
+	case max == min:
+		result = max
+	case max > min:
+		maxRand := max - min
+		b, err := rand.Int(rand.Reader, big.NewInt(int64(maxRand)))
+		if err != nil {
+			return result, err
+		}
+		result = min + int(b.Int64())
+	}
+	return result, nil
 }
 
-func removeParent(s []parent, i int) []parent {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
+func StartEncoder(enc *encode, file *os.File) (err error) {
+	if _, err = file.Write([]byte{'['}); err != nil {
+		return err
+	}
+
+	encoder := json.NewEncoder(file)
+
+	enc.Encoder = encoder
+	enc.File = file
+
+	return nil
+}
+
+func (enc *encode) AddEntry(entry interface{}) (err error) {
+	if enc.ContinuedEntry {
+		if _, err = enc.File.Write([]byte{','}); err != nil {
+			return err
+		}
+	}
+
+	if err := enc.Encoder.Encode(entry); err != nil {
+		return err
+	}
+
+	enc.ContinuedEntry = true
+
+	return nil
+}
+
+func (enc *encode) CloseEncoder() (err error) {
+	if _, err = enc.File.Write([]byte{']'}); err != nil {
+		panic(err)
+	}
+
+	enc.File.Close()
+
+	return nil
 }
