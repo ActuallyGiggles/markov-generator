@@ -5,7 +5,7 @@ import (
 	"log"
 	"markov-generator/api"
 	"markov-generator/global"
-	"markov-generator/handler"
+	"markov-generator/handlers"
 	"markov-generator/platform"
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
@@ -76,7 +76,7 @@ func Start() {
 	markov.Start(i)
 	stats.Log("Markov started")
 
-	go handler.MsgHandler(c)
+	go handlers.MsgHandler(c)
 	stats.Log("Handler started")
 
 	stats.Log("Gathering emotes")

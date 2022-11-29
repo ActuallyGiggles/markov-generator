@@ -1,7 +1,7 @@
 package api
 
 import (
-	"markov-generator/handler"
+	"markov-generator/handlers"
 	"sync"
 	"time"
 
@@ -41,7 +41,7 @@ func limitEndpoint(timer int, endpoint string) bool {
 	endpointLimit := 0
 	switch endpoint {
 	default:
-		endpointLimit = 10
+		endpointLimit = 30
 	}
 	if limit[endpoint] > endpointLimit {
 		limitMx.Unlock()
@@ -73,7 +73,7 @@ func guard(channel string, c chan string) {
 	output, problem := markov.Out(oi)
 
 	if problem == nil {
-		if !handler.RandomlyPickLongerSentences(output) {
+		if !handlers.RandomlyPickLongerSentences(output) {
 			recurse(channel, output, c)
 			return
 		} else {

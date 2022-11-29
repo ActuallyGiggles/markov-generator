@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"markov-generator/global"
-	"markov-generator/handler"
+	"markov-generator/handlers"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
 	"markov-generator/stats"
@@ -206,7 +206,7 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 						Error:          "",
 					}
 
-					handler.OutputHandler("api", channel, output)
+					handlers.OutputHandler("api", channel, channel, output, "")
 				}
 			} else {
 				apiResponse = APIResponse{
@@ -214,7 +214,7 @@ func getSentence(w http.ResponseWriter, r *http.Request) {
 					ChannelUsed:    channel,
 					MessageUsed:    target,
 					MarkovSentence: "",
-					Error:          "Channel is locked for 0.5s to prevent spam.",
+					Error:          "Channel is locked for 0.5s to prevent spam. Try again.",
 				}
 			}
 		}
