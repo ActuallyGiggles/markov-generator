@@ -151,20 +151,15 @@ func createFolders() {
 	}
 }
 
-// func removeChild(s []child, i int) []child {
-// 	s[i] = s[len(s)-1]
-// 	return s[:len(s)-1]
-// }
+func (p *parent) removeGrandparent(i int) {
+	p.Grandparents[i] = p.Grandparents[len(p.Grandparents)-1]
+	p.Grandparents = p.Grandparents[:len(p.Grandparents)-1]
+}
 
 func (p *parent) removeChild(i int) {
 	p.Children[i] = p.Children[len(p.Children)-1]
 	p.Children = p.Children[:len(p.Children)-1]
 }
-
-// func removeParent(s []parent, i int) []parent {
-// 	s[i] = s[len(s)-1]
-// 	return s[:len(s)-1]
-// }
 
 func (c *chain) removeParent(i int) {
 	c.Parents[i] = c.Parents[len(c.Parents)-1]

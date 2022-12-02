@@ -50,9 +50,9 @@ func lowercaseIfNotEmote(channel string, message string) string {
 		}
 
 		if !match {
-			for _, channel := range global.ThirdPartyChannelEmotes {
-				if channel.Name == word {
-					for _, emote := range channel.Emotes {
+			for _, c := range global.ThirdPartyChannelEmotes {
+				if c.Name == channel {
+					for _, emote := range c.Emotes {
 						if word == emote.Name {
 							match = true
 							new = append(new, word)
@@ -174,35 +174,19 @@ func unlockChannel(timer int, channel string) {
 	channelLockMx.Unlock()
 }
 
-func RandomlyPickLongerSentences(sentence string) bool {
+func IsSentenceFiltered(sentence string) bool {
 	// Split sentence into words
 	s := strings.Split(sentence, " ")
 
-	// If s does not exceed 1 word, give 25% chance of making it through
-	if !DoesSliceContainIndex(s, 1) {
-		n := global.RandomNumber(0, 100)
-		if n <= 25 {
-			return false
-		}
-	}
-
-	// If s does not exceed 2 words, give 50% chance of making it through
-	if !DoesSliceContainIndex(s, 2) {
+	// If there are one to three words, 50% chance to pass
+	if 0 < len(s) && len(s) < 4 {
 		n := global.RandomNumber(0, 100)
 		if n <= 50 {
-			return false
+			return true
 		}
 	}
 
-	// If s does not exceed 3 words, give 75% chance of making it through
-	if !DoesSliceContainIndex(s, 3) {
-		n := global.RandomNumber(0, 100)
-		if n <= 75 {
-			return false
-		}
-	}
-
-	return true
+	return false
 }
 
 func DoesSliceContainIndex(slice []string, index int) bool {
@@ -544,4 +528,38 @@ func UpdateResourceAndChannel(resourceType string, mode string, returnChannelID 
 		}
 	}
 	global.UpdateResourceLists()
+}
+
+func removeDeterminers(content string) (target string) {
+	s := strings.Split(clearNonAlphanumeric(content), " ")
+	wordsToAvoid := global.BotName + "|" + "the|a|an|this|that|these|those|my|your|his|her|its|our|their|a few|a little|much|many|a lot of|most|some|any|enough|all|both|half|either|neither|each|every|other|another|such|what|rather|quite"
+
+	for true {
+		matched := true
+
+		for i, w := range s {
+			match, err := regexp.MatchString(wordsToAvoid, w)
+			if err != nil {
+				panic(err)
+			}
+
+			if match {
+				s = global.FastRemove(s, i)
+				break
+			}
+
+			matched = false
+		}
+
+		if !matched {
+			break
+		}
+	}
+
+	return global.PickRandomFromSlice(s)
+}
+
+func clearNonAlphanumeric(str string) string {
+	nonAlphanumericRegex := regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+	return nonAlphanumericRegex.ReplaceAllString(str, "")
 }

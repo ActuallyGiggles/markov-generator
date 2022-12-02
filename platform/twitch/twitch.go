@@ -1,8 +1,10 @@
 package twitch
 
 import (
+	"fmt"
 	"markov-generator/global"
 	"markov-generator/platform"
+	"markov-generator/stats"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )
@@ -13,6 +15,9 @@ var totalM int
 
 // Start creates a twitch client and connects it.
 func Start(in chan platform.Message) {
+	startedOver := 0
+
+startOver:
 	// Make unexported client use the address for the initialized client
 	client = &twitch.Client{}
 	client = twitch.NewClient(global.BotName, "oauth:"+global.TwitchOAuth)
@@ -60,6 +65,14 @@ func Start(in chan platform.Message) {
 
 	err := client.Connect()
 	if err != nil {
+		startedOver++
+
+		if startedOver < 5 {
+			stats.Log(err.Error())
+			goto startOver
+		}
+
+		fmt.Println("started over more than 5 times\nlast error:")
 		panic(err)
 	}
 }

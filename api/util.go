@@ -1,11 +1,8 @@
 package api
 
 import (
-	"markov-generator/handlers"
 	"sync"
 	"time"
-
-	"markov-generator/markov"
 )
 
 var (
@@ -56,47 +53,4 @@ func limitEndpoint(timer int, endpoint string) bool {
 		limitMx.Unlock()
 	}(timer)
 	return true
-}
-
-func warden(channel string) (output string) {
-	c := make(chan string)
-	go guard(channel, c)
-	r := <-c
-	return r
-}
-
-func guard(channel string, c chan string) {
-	oi := markov.OutputInstructions{
-		Chain:  channel,
-		Method: "LikelyBeginning",
-	}
-	output, problem := markov.Out(oi)
-
-	if problem == nil {
-		if !handlers.RandomlyPickLongerSentences(output) {
-			recurse(channel, output, c)
-			return
-		} else {
-			c <- output
-			close(c)
-			return
-		}
-	} else {
-		recurse(channel, "", c)
-		return
-	}
-}
-
-func recurse(channel string, output string, c chan string) {
-	recursionsMx.Lock()
-	recursions[channel] += 1
-	if recursions[channel] > 100 {
-		recursions[channel] = 0
-		recursionsMx.Unlock()
-		c <- output
-		close(c)
-	} else {
-		recursionsMx.Unlock()
-		go guard(channel, c)
-	}
 }

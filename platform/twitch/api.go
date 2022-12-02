@@ -19,6 +19,7 @@ func routineBroadcastersUpdate(directive global.Directive) (err error) {
 		e := global.ThirdPartyEmotes{
 			Name: directive.ChannelName,
 		}
+
 		thirdPartyChannelEmotesToUpdate = append(thirdPartyChannelEmotesToUpdate, e)
 	} else {
 		return err
@@ -199,12 +200,10 @@ func get7tvChannelEmotes(c Data) (err error) {
 	for i, channel := range thirdPartyChannelEmotesToUpdate {
 		if channel.Name == c.Login {
 			for _, emote := range emotes {
-				e := global.Emote{
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, global.Emote{
 					Name: emote.Name,
 					Url:  emote.Urls[3][1],
-				}
-
-				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+				})
 			}
 		}
 	}
@@ -268,18 +267,16 @@ func getBttvChannelEmotes(c Data) (err error) {
 	for i, channel := range thirdPartyChannelEmotesToUpdate {
 		if channel.Name == c.Login {
 			for _, emote := range emotes.ChannelEmotes {
-				e := global.Emote{
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, global.Emote{
 					Name: emote.Name,
 					Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
-				}
-				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+				})
 			}
 			for _, emote := range emotes.SharedEmotes {
-				e := global.Emote{
+				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, global.Emote{
 					Name: emote.Name,
 					Url:  "https://cdn.betterttv.net/emote/" + emote.ID + "/3x.png",
-				}
-				thirdPartyChannelEmotesToUpdate[i].Emotes = append(thirdPartyChannelEmotesToUpdate[i].Emotes, e)
+				})
 			}
 		}
 	}

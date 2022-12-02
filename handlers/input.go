@@ -13,11 +13,12 @@ func MsgHandler(c chan platform.Message) {
 			newMessage, passed := prepareMessage(msg)
 			if passed {
 				go markov.In(msg.ChannelName, newMessage)
-				go createDefaultSentence(msg.ChannelName, true)
+				go createDefaultSentence(msg.ChannelName)
 
 				for _, directive := range global.Directives {
 					if directive.ChannelName == msg.ChannelName {
-						if strings.Contains(strings.ToLower(msg.Content), global.BotName) {
+						msg.Content = newMessage
+						if strings.Contains(msg.Content, global.BotName) {
 							go createMentioningSentence(msg, directive)
 						} else {
 							go createImmitationSentence(msg, directive)

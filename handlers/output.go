@@ -18,7 +18,7 @@ func outputTicker() {
 				continue
 			}
 
-			createDefaultSentence(chain, false)
+			createDefaultSentence(chain)
 
 			continue
 		}
@@ -40,7 +40,12 @@ func OutputHandler(origin string, channelUsed string, sendBackToChannel string, 
 			twitch.Say(sendBackToChannel, message)
 		} else if origin == "createMentioningSentence" {
 			twitch.Say(sendBackToChannel, "@"+mention+" "+message)
+			discord.Say("mentioning", "Channel Used: "+channelUsed+"\nChannel Sent To: "+sendBackToChannel+"\nMessage: @"+mention+" "+message)
 		}
+	}
+
+	if origin == "api" {
+		discord.Say("website-results", str)
 	}
 
 	return

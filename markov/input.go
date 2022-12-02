@@ -19,18 +19,19 @@ func In(chainName string, content string) {
 	}
 
 	w.ChainMx.Lock()
-	//debugLog("Input Locked")
+	debugLog("Input Locked")
 	w.addInput(content)
 	w.ChainMx.Unlock()
-	//debugLog("Input Unlocked")
+	debugLog("Input Unlocked")
 
 	writeCounter()
 }
 
 func (w *worker) addInput(content string) {
 	slice := prepareContentForChainProcessing(content)
-	extractStartAndSaveToChain(&w.Chain, w.Name, slice)
-	extractAndSaveToChain(&w.Chain, w.Name, slice)
+	extractHead(&w.Chain, w.Name, slice)
+	extractBody(&w.Chain, w.Name, slice)
+	extractTail(&w.Chain, w.Name, slice)
 
 	w.Intake++
 	stats.LifetimeInputs++
@@ -54,7 +55,7 @@ func prepareContentForChainProcessing(content string) []string {
 	return returnSlice
 }
 
-func extractStartAndSaveToChain(c *chain, name string, slice []string) {
+func extractHead(c *chain, name string, slice []string) {
 	start := slice[0]
 	next := slice[1]
 
@@ -98,10 +99,11 @@ func extractStartAndSaveToChain(c *chain, name string, slice []string) {
 	}
 }
 
-func extractAndSaveToChain(c *chain, name string, slice []string) {
+func extractBody(c *chain, name string, slice []string) {
 	for i := 0; i < len(slice)-2; i++ {
 		current := slice[i+1]
 		next := slice[i+2]
+		previous := slice[i]
 
 		parentExists := false
 		for i := 0; i < len(c.Parents); i++ {
@@ -109,6 +111,7 @@ func extractAndSaveToChain(c *chain, name string, slice []string) {
 			if parent.Word == current {
 				parentExists = true
 
+				// Deal with child
 				childExists := false
 				for i := 0; i < len(parent.Children); i++ {
 					child := &parent.Children[i]
@@ -126,10 +129,30 @@ func extractAndSaveToChain(c *chain, name string, slice []string) {
 					}
 					parent.Children = append(parent.Children, child)
 				}
+
+				// Deal with grandparent
+				grandparentExists := false
+				for i := 0; i < len(parent.Grandparents); i++ {
+					grandparent := &parent.Grandparents[i]
+					if grandparent.Word == previous {
+						grandparentExists = true
+
+						grandparent.Value += 1
+					}
+				}
+
+				if !grandparentExists {
+					grandparent := grandparent{
+						Word:  previous,
+						Value: 1,
+					}
+					parent.Grandparents = append(parent.Grandparents, grandparent)
+				}
 			}
 		}
 
 		if !parentExists {
+			// Deal with child
 			var children []child
 			child := child{
 				Word:  next,
@@ -137,11 +160,65 @@ func extractAndSaveToChain(c *chain, name string, slice []string) {
 			}
 			children = append(children, child)
 
+			// Deal with grandparent
+			var grandparents []grandparent
+			grandparent := grandparent{
+				Word:  previous,
+				Value: 1,
+			}
+			grandparents = append(grandparents, grandparent)
+
+			// Add all to parent
 			parent := parent{
-				Word:     current,
-				Children: children,
+				Word:         current,
+				Children:     children,
+				Grandparents: grandparents,
 			}
 			c.Parents = append(c.Parents, parent)
 		}
+	}
+}
+
+func extractTail(c *chain, name string, slice []string) {
+	end := slice[len(slice)-1]
+	previous := slice[len(slice)-2]
+
+	parentExists := false
+	for i := 0; i < len(c.Parents); i++ {
+		parent := &c.Parents[i]
+		if parent.Word == end {
+			parentExists = true
+
+			grandparentExists := false
+			for i := 0; i < len(parent.Grandparents); i++ {
+				grandparent := &parent.Grandparents[i]
+				if grandparent.Word == previous {
+					grandparentExists = true
+					grandparent.Value += 1
+				}
+			}
+
+			if !grandparentExists {
+				grandparent := grandparent{
+					Word:  previous,
+					Value: 1,
+				}
+				parent.Grandparents = append(parent.Grandparents, grandparent)
+			}
+		}
+	}
+
+	if !parentExists {
+		var grandparents []grandparent
+		grandparent := grandparent{
+			Word:  previous,
+			Value: 1,
+		}
+		grandparents = append(grandparents, grandparent)
+		parent := parent{
+			Word:         end,
+			Grandparents: grandparents,
+		}
+		c.Parents = append(c.Parents, parent)
 	}
 }

@@ -58,10 +58,10 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 		if err != nil {
 			stats.Log(err.Error())
 		}
-		for _, emote := range twitchChannelEmotesToUpdate {
-			global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, emote) // Add each twitch channel emote
-		}
+		global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, twitchChannelEmotesToUpdate...) // Add each twitch channel emote
 		twitchChannelEmotesToUpdate = nil
+
+		thirdPartyChannelEmotesToUpdate = append(thirdPartyChannelEmotesToUpdate, global.ThirdPartyEmotes{Name: channel.ChannelName})
 
 		// Get 7tv emotes
 		err = get7tvChannelEmotes(data)
@@ -110,38 +110,26 @@ func transferEmotes(isInit bool) {
 
 func transferGlobalEmotes() {
 	global.GlobalEmotes = nil
-	total := 0
-	for _, emote := range globalEmotesToUpdate {
-		global.GlobalEmotes = append(global.GlobalEmotes, emote)
-		total++
-	}
+	global.GlobalEmotes = append(global.GlobalEmotes, globalEmotesToUpdate...)
 	globalEmotesToUpdate = nil
-	log.Printf("[Updated %d Global emotes]", total)
+	log.Printf("[Updated %d Global emotes]", len(global.GlobalEmotes))
 }
 
 func transferTwitchChannelEmotes() {
 	global.TwitchChannelEmotes = nil
-	total := 0
-	for _, emote := range twitchChannelEmotesToUpdate {
-		global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, emote)
-		total++
-	}
+	global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, twitchChannelEmotesToUpdate...)
 	twitchChannelEmotesToUpdate = nil
-	log.Printf("[Updated %d Twitch Channel emotes]", total)
+	log.Printf("[Updated %d Twitch Channel emotes]", len(global.TwitchChannelEmotes))
 }
 
 func transferThirdPartyEmotes() {
 	global.ThirdPartyChannelEmotes = nil
-	total := 0
-	for _, channel := range thirdPartyChannelEmotesToUpdate {
-		e := global.ThirdPartyEmotes{
-			Name:   channel.Name,
-			Emotes: channel.Emotes,
-		}
-
-		global.ThirdPartyChannelEmotes = append(global.ThirdPartyChannelEmotes, e)
-		total += len(channel.Emotes)
-	}
+	global.ThirdPartyChannelEmotes = append(global.ThirdPartyChannelEmotes, thirdPartyChannelEmotesToUpdate...)
 	thirdPartyChannelEmotesToUpdate = nil
-	log.Printf("[Updated %d Third Party emotes]", total)
+	log.Printf("[Updated %d Third Party emotes]", func() (total int) {
+		for _, c := range global.ThirdPartyChannelEmotes {
+			total += len(c.Emotes)
+		}
+		return
+	}())
 }

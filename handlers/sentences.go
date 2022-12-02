@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"markov-generator/global"
 	"markov-generator/platform"
 	"markov-generator/platform/discord"
@@ -15,18 +16,19 @@ import (
 var (
 	channelLock   = make(map[string]bool)
 	channelLockMx sync.Mutex
-	recursions    = make(map[string]int)
-	recursionsMx  sync.Mutex
 	respondLock   = make(map[string]bool)
 	respondLockMx sync.Mutex
 )
 
 // createDefaultSentence outputs a likely sentence to a channel.
-func createDefaultSentence(channel string, isNewRequest bool) {
-	if !lockChannel(300, channel) && isNewRequest {
+func createDefaultSentence(channel string) {
+	if !lockChannel(300, channel) {
 		return
 	}
 
+	timesRecursed := 0
+
+recurse:
 	oi := markov.OutputInstructions{
 		Chain:  channel,
 		Method: "LikelyBeginning",
@@ -35,7 +37,7 @@ func createDefaultSentence(channel string, isNewRequest bool) {
 	output, err := markov.Out(oi)
 
 	if err == nil {
-		if RandomlyPickLongerSentences(output) {
+		if !IsSentenceFiltered(output) {
 			OutputHandler("createDefaultSentence", channel, channel, output, "")
 			return
 		}
@@ -45,17 +47,9 @@ func createDefaultSentence(channel string, isNewRequest bool) {
 		}
 	}
 
-	// Recurse the request if there is an error in the output*
-
-	recursionsMx.Lock()
-	recursions[channel] += 1
-
-	if recursions[channel] > 5 {
-		recursions[channel] = 0
-		recursionsMx.Unlock()
-	} else {
-		recursionsMx.Unlock()
-		go createDefaultSentence(channel, false)
+	if timesRecursed < 5 {
+		timesRecursed++
+		goto recurse
 	}
 
 	return
@@ -77,30 +71,47 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		}
 
 		chainToUse := directive.ChannelName
+		recursionLimit := 50
+		timesRecursed := 0
 
+	recurse:
 		if random {
 			chainToUse = GetRandomChannel(directive.ChannelName)
 		}
 
-		s := strings.Split(msg.Content, " ")
-		t := global.PickRandomFromSlice(s)
+		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
+		target := removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
 
 		oi := markov.OutputInstructions{
-			Method: "TargetedBeginning",
+			Method: method,
 			Chain:  chainToUse,
-			Target: t,
+			Target: target,
 		}
 		output, err := markov.Out(oi)
 
 		if err == nil {
 			OutputHandler("createImmitationSentence", chainToUse, msg.ChannelName, output, "")
 		} else {
-			if strings.Contains(err.Error(), "The system cannot find the file specified.") {
-				return
+			// Recurse if expected error
+			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
+				strings.Contains(err.Error(), "does not contain parents that match") {
+				if timesRecursed < recursionLimit {
+					timesRecursed++
+					goto recurse
+				}
+			} else {
+				// Recurse if unique error
+				stats.Log(err.Error())
+				discord.Say("error-tracking", err.Error())
+				if timesRecursed < recursionLimit {
+					timesRecursed++
+					goto recurse
+				}
 			}
-			stats.Log(err.Error())
-			discord.Say("error-tracking", err.Error())
+
+			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
+
 		return
 	}
 }
@@ -122,38 +133,48 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		}
 
 		chainToUse := directive.ChannelName
+		recursionLimit := 50
+		timesRecursed := 0
 
+	recurse:
 		if random {
 			chainToUse = GetRandomChannel(directive.ChannelName)
 		}
 
-		s := strings.Split(msg.Content, " ")
+		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
+		target := removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
 
-		for i, w := range s {
-			if strings.Contains(strings.ToLower(w), global.BotName) {
-				s = global.FastRemove(s, i)
-				continue
-			}
-		}
-
-		t := global.PickRandomFromSlice(s)
-
-		oi := markov.OutputInstructions{
-			Method: "TargetedBeginning",
+		instructions := markov.OutputInstructions{
+			Method: method,
 			Chain:  chainToUse,
-			Target: t,
+			Target: target,
 		}
-		output, err := markov.Out(oi)
+		output, err := markov.Out(instructions)
 
-		if err == nil {
+		if err == nil && output != "" {
 			OutputHandler("createMentioningSentence", chainToUse, msg.ChannelName, output, msg.AuthorName)
 		} else {
-			if strings.Contains(err.Error(), "The system cannot find the file specified.") {
-				return
+			// Recurse if expected error
+			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
+				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(output, "@") {
+				if timesRecursed < recursionLimit {
+					timesRecursed++
+					goto recurse
+				}
+			} else {
+				// Recurse if unique error
+				stats.Log(err.Error())
+				discord.Say("error-tracking", err.Error())
+				if timesRecursed < recursionLimit {
+					timesRecursed++
+					goto recurse
+				}
 			}
-			stats.Log(err.Error())
-			discord.Say("error-tracking", err.Error())
+
+			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
+
 		return
 	}
 }
