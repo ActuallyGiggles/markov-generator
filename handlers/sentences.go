@@ -57,6 +57,7 @@ recurse:
 
 // createImmitationSentence takes in a message and outputs a targeted sentence without mentioning a user.
 func createImmitationSentence(msg platform.Message, directive global.Directive) {
+	connected := directive.Settings.Connected
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
 	random := directive.Settings.IsOptedIn
@@ -75,7 +76,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		timesRecursed := 0
 
 	recurse:
-		if random {
+		if random || !connected {
 			chainToUse = GetRandomChannel(directive.ChannelName)
 		}
 
@@ -94,7 +95,8 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		} else {
 			// Recurse if expected error
 			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
-				strings.Contains(err.Error(), "does not contain parents that match") {
+				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(output, "@") {
 				if timesRecursed < recursionLimit {
 					timesRecursed++
 					goto recurse
@@ -118,6 +120,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 
 // createMentioningSentence takes in a message and outputs a targeted sentence that directly mentions a user.
 func createMentioningSentence(msg platform.Message, directive global.Directive) {
+	connected := directive.Settings.Connected
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
 	commandsEnabled := directive.Settings.AreCommandsEnabled
@@ -137,8 +140,9 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		timesRecursed := 0
 
 	recurse:
-		if random {
+		if random || !connected {
 			chainToUse = GetRandomChannel(directive.ChannelName)
+			chainToUse = "test"
 		}
 
 		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})

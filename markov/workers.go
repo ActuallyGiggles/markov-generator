@@ -12,6 +12,13 @@ var (
 func startWorkers() {
 	chains := chains()
 	for _, name := range chains {
+		workerMapMx.Lock()
+		if _, ok := workerMap[name]; ok {
+			workerMapMx.Unlock()
+			continue
+		}
+		workerMapMx.Unlock()
+
 		newWorker(name)
 	}
 }

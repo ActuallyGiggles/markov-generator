@@ -1,6 +1,7 @@
 package discord
 
 import (
+	"fmt"
 	"log"
 	"markov-generator/global"
 	"markov-generator/stats"
@@ -23,10 +24,12 @@ func convertTopicToDirective(topic string) (channel global.Directive, ok bool) {
 	args := strings.Split(topic, ", ")
 
 	if len(args) != 9 {
+		fmt.Println("not 9", len(args), args)
 		return global.Directive{}, false
 	}
 
 	if len(args[1]) < 3 || len(args[1]) > 25 {
+		fmt.Println()
 		return global.Directive{}, false
 	}
 
@@ -34,23 +37,25 @@ func convertTopicToDirective(topic string) (channel global.Directive, ok bool) {
 	channelName := args[1]
 	channelId := args[2]
 	dChannelId := args[3]
-	connected := true
-	onlinebool := false
-	offlinebool := false
-	commandsbool := false
-	optedbool := false
-
-	if args[5] == "true" {
-		onlinebool = true
+	connected, err := strconv.ParseBool(args[4])
+	if err != nil {
+		panic(err)
 	}
-	if args[6] == "true" {
-		offlinebool = true
+	onlinebool, err := strconv.ParseBool(args[5])
+	if err != nil {
+		panic(err)
 	}
-	if args[7] == "true" {
-		commandsbool = true
+	offlinebool, err := strconv.ParseBool(args[6])
+	if err != nil {
+		panic(err)
 	}
-	if args[8] == "true" {
-		optedbool = true
+	commandsbool, err := strconv.ParseBool(args[7])
+	if err != nil {
+		panic(err)
+	}
+	optedbool, err := strconv.ParseBool(args[8])
+	if err != nil {
+		panic(err)
 	}
 
 	channel = global.Directive{
@@ -90,9 +95,9 @@ func getDirective(topic string) {
 	c, ok := convertTopicToDirective(topic)
 	if ok {
 		global.Directives = append(global.Directives, c)
-		return
+	} else {
+		panic("[There was an issue converting this topic!]\n ->\n\t" + topic)
 	}
-	return
 }
 
 // getResource collects the resources in each resource channel in Discord, then adds it to global.Resources.

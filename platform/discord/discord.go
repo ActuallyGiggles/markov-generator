@@ -124,7 +124,7 @@ func SayMention(channel string, mention string, message string) {
 
 func SayByIDAndDelete(channelID string, message string) {
 	m := SayByID(channelID, message)
-	time.Sleep(time.Duration(5) * time.Second)
+	time.Sleep(time.Duration(15) * time.Second)
 	DeleteDiscordMessage(channelID, m.ID)
 }
 
@@ -167,7 +167,7 @@ func DeleteDiscordChannel(name string) (ok bool) {
 func DeleteDiscordMessage(channelID string, messageID string) {
 	err := discord.ChannelMessageDelete(channelID, messageID)
 	if err != nil {
-		stats.Log("DeleteDiscordChannel failed\n" + err.Error())
+		stats.Log("DeleteDiscordMessage failed\n" + err.Error())
 	}
 }
 

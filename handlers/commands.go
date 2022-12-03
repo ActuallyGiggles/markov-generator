@@ -18,6 +18,7 @@ func discordCommands(m platform.Message) {
 
 	switch command {
 
+	// Directives settings
 	case "addchannel", "ac":
 		addDirective(m.ChannelID, m.MessageID, args)
 	case "updatechannel", "uc":
@@ -27,6 +28,7 @@ func discordCommands(m platform.Message) {
 	case "disconnectchannel", "dc":
 		connectionOfDirective("disconnect", m.ChannelID, m.MessageID, args)
 
+	// Resources settings
 	case "addregex", "ar":
 		UpdateResourceAndChannel("regex", "add", m.ChannelID, m.MessageID, args)
 	case "removeregex", "rr":

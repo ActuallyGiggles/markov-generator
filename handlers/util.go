@@ -288,7 +288,7 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 }
 
 func updateDirective(returnChannelID string, messageID string, args []string) {
-	defer discord.DeleteDiscordMessage(returnChannelID, messageID)
+	discord.DeleteDiscordMessage(returnChannelID, messageID)
 
 	if !checkArgFormatting(returnChannelID, args) {
 		return
@@ -321,12 +321,11 @@ func updateDirective(returnChannelID string, messageID string, args []string) {
 		return
 	}
 
-	success = removeDirective(channel.ChannelName)
-	if !success {
-		stats.Log("failed to remove directive " + channel.ChannelName)
-		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
+	for i := range global.Directives {
+		if global.Directives[i].ChannelName == channelName {
+			global.Directives[i] = channel
+		}
 	}
-	global.Directives = append(global.Directives, channel)
 
 	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" updated successfully.")
 }
@@ -352,6 +351,8 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 
 	if mode == "connect" {
 		connected = true
+	} else {
+		connected = false
 	}
 
 	channel := global.Directive{
@@ -372,12 +373,11 @@ func connectionOfDirective(mode string, returnChannelID string, messageID string
 		return
 	}
 
-	success = removeDirective(channel.ChannelName)
-	if !success {
-		stats.Log("failed to remove directive " + channel.ChannelName)
-		discord.Say("error-tracking", "failed to remove directive "+channel.ChannelName)
+	for i := range global.Directives {
+		if global.Directives[i].ChannelName == channelName {
+			global.Directives[i] = channel
+		}
 	}
-	global.Directives = append(global.Directives, channel)
 
 	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" updated successfully.")
 }
