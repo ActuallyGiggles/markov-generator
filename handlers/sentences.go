@@ -142,7 +142,6 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 	recurse:
 		if random || !connected {
 			chainToUse = GetRandomChannel(directive.ChannelName)
-			chainToUse = "test"
 		}
 
 		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
