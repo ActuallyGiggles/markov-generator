@@ -547,6 +547,10 @@ func removeDeterminers(content string) (target string) {
 		}
 	}
 
+	if len(ns) == 0 {
+		return ""
+	}
+
 	return global.PickRandomFromSlice(ns)
 }
 
