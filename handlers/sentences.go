@@ -136,7 +136,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		}
 
 		chainToUse := directive.ChannelName
-		recursionLimit := 50
+		recursionLimit := len(markov.CurrentChains())
 		timesRecursed := 0
 
 	recurse:
@@ -148,7 +148,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		var target string
 
 		if q := isQuestion(msg.Content); q {
-			method = "LikelyBeginning"
+			method = "TargetedBeginning"
 			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely not", "absolutely", "who knows"})
 		} else {
 			method = global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})

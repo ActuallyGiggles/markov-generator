@@ -541,9 +541,8 @@ func removeDeterminers(content string) (target string) {
 			panic(err)
 		}
 
-		if match {
+		if !match {
 			ns = append(ns, w)
-			break
 		}
 	}
 
