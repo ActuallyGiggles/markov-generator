@@ -532,34 +532,37 @@ func UpdateResourceAndChannel(resourceType string, mode string, returnChannelID 
 
 func removeDeterminers(content string) (target string) {
 	s := strings.Split(clearNonAlphanumeric(content), " ")
-	wordsToAvoid := global.BotName + "|" + "the|a|an|this|that|these|those|my|your|his|her|its|our|their|a few|a little|much|many|a lot of|most|some|any|enough|all|both|half|either|neither|each|every|other|another|such|what|rather|quite"
+	ns := []string{}
+	wordsToAvoid := global.BotName + "^this$|^that$|^those$|^to$|^you$|^i$|^is$|^a$|^the$|^a$|^an$|^this$|^that$|^these$|^those$|^my$|^your$|^his$|^her$|^its$|^our$|^their$|^much$|^many$|^of$|^most$|^some$|^any$|^enough$|^all$|^both$|^half$|^either$|^neither$|^each$|^every$|^other$|^another$|^such$|^rather$|^quite$|^from$"
 
-	for true {
-		matched := true
-
-		for i, w := range s {
-			match, err := regexp.MatchString(wordsToAvoid, w)
-			if err != nil {
-				panic(err)
-			}
-
-			if match {
-				s = global.FastRemove(s, i)
-				break
-			}
-
-			matched = false
+	for _, w := range s {
+		match, err := regexp.MatchString(wordsToAvoid, w)
+		if err != nil {
+			panic(err)
 		}
 
-		if !matched {
+		if match {
+			ns = append(ns, w)
 			break
 		}
 	}
 
-	return global.PickRandomFromSlice(s)
+	return global.PickRandomFromSlice(ns)
 }
 
 func clearNonAlphanumeric(str string) string {
 	nonAlphanumericRegex := regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 	return nonAlphanumericRegex.ReplaceAllString(str, "")
+}
+
+func isQuestion(content string) bool {
+	questionWords := []string{"will", "is", "does", "do", "are", "have"}
+
+	for _, q := range questionWords {
+		if strings.HasPrefix(content, q) || strings.HasSuffix(content, "?") {
+			return true
+		}
+	}
+
+	return false
 }

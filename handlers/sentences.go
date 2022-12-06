@@ -144,8 +144,19 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			chainToUse = GetRandomChannel(directive.ChannelName)
 		}
 
-		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
-		target := removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
+		var method string
+		var target string
+
+		if q := isQuestion(msg.Content); q {
+			method = "LikelyBeginning"
+			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely not", "absolutely", "who knows"})
+		} else {
+			method = global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
+			target = removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
+			if target == "" {
+				return
+			}
+		}
 
 		instructions := markov.OutputInstructions{
 			Method: method,
