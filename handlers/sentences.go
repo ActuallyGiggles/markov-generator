@@ -67,7 +67,11 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 	twitch.IsLiveMx.Unlock()
 
 	if (live && onlineEnabled) || (!live && offlineEnabled) {
-		if !lockResponse(global.RandomNumber(30, 180), msg.ChannelName) {
+		if randomChance := global.RandomNumber(0, 100); randomChance > 50 {
+			return
+		}
+
+		if !lockResponse(global.RandomNumber(1, 10), msg.ChannelName) {
 			return
 		}
 

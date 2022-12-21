@@ -197,7 +197,8 @@ func DoesSliceContainIndex(slice []string, index int) bool {
 	}
 }
 
-func lockResponse(timer int, channel string) bool {
+// lockResponse will mark a channel as locked until the time (in minutes) has passed.
+func lockResponse(time int, channel string) bool {
 	respondLockMx.Lock()
 	if respondLock[channel] {
 		respondLockMx.Unlock()
@@ -205,12 +206,12 @@ func lockResponse(timer int, channel string) bool {
 	}
 	respondLock[channel] = true
 	respondLockMx.Unlock()
-	go unlockResponse(timer, channel)
+	go unlockResponse(time, channel)
 	return true
 }
 
 func unlockResponse(timer int, channel string) {
-	time.Sleep(time.Duration(timer) * time.Second)
+	time.Sleep(time.Duration(timer) * time.Minute)
 	respondLockMx.Lock()
 	respondLock[channel] = false
 	respondLockMx.Unlock()

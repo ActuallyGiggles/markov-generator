@@ -68,7 +68,7 @@ func AddMessageToPotentialTweets(channel string, message string) {
 
 func pickTweet() {
 	// Create ticker to repeat tweet picking
-	for range time.Tick(30 * time.Minute) {
+	for range time.Tick(1 * time.Hour) {
 		channel, message, empty := PickRandomFromMap(potentialTweets)
 		if empty {
 			stats.Log("Empty map.")

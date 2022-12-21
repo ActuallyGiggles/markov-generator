@@ -26,7 +26,7 @@ func updateLiveStatuses() {
 }
 
 func refreshEmotes() {
-	for range time.Tick(10 * time.Minute) {
+	for range time.Tick(30 * time.Minute) {
 		GetEmoteController(false, global.Directive{})
 	}
 }
