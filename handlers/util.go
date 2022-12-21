@@ -5,8 +5,8 @@ import (
 	"markov-generator/platform"
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
-	"markov-generator/stats"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -217,14 +217,12 @@ func unlockResponse(timer int, channel string) {
 	respondLockMx.Unlock()
 }
 
-func GetRandomChannel(channel string) (randomChannel string) {
-	// Get a random channel global.Channels list except the channel included and empty channels
-
+func GetRandomChannel(mode string, channel string) (randomChannel string) {
 	var s []string
 
 	chains := markov.CurrentChains()
 	for _, chain := range chains {
-		if chain == channel {
+		if mode == "except self" && chain == channel {
 			continue
 		}
 		s = append(s, chain)
@@ -233,25 +231,27 @@ func GetRandomChannel(channel string) (randomChannel string) {
 	return global.PickRandomFromSlice(s)
 }
 
-func addDirective(returnChannelID string, messageID string, args []string) {
-	defer discord.DeleteDiscordMessage(returnChannelID, messageID)
+func addDirectiveSimple(channelID string, messageID string, args []string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
 
-	if !checkArgFormatting(returnChannelID, args) {
-		return
-	}
+	var messagesToDelete []string
+	defer func() {
+		for _, message := range messagesToDelete {
+			discord.DeleteDiscordMessage(channelID, message)
+		}
+	}()
 
 	for _, c := range global.Directives {
 		if c.ChannelName == args[1] {
-			go discord.SayByIDAndDelete(returnChannelID, "Channel is already added.")
+			discord.SayByIDAndDelete(channelID, "Channel is already added.")
 			return
 		}
 	}
 
 	platform := args[0]
 	channelName := args[1]
-	connected, online, offline, commands, random := findSettings("add", args)
 
-	platformChannelID, discordChannelID, success := findChannelIDs("add", platform, channelName, returnChannelID)
+	platformChannelID, discordChannelID, success := findChannelIDs("add", platform, channelName, channelID)
 	if !success {
 		return
 	}
@@ -262,179 +262,251 @@ func addDirective(returnChannelID string, messageID string, args []string) {
 		ChannelID:        platformChannelID,
 		DiscordChannelID: discordChannelID,
 		Settings: global.DirectiveSettings{
-			Connected:          connected,
-			IsOnlineEnabled:    online,
-			IsOfflineEnabled:   offline,
-			AreCommandsEnabled: commands,
-			IsOptedIn:          random,
+			Connected:          true,
+			WhichChannelsToUse: "self",
 		},
 	}
 
-	if !updateChannelTopic("add", channel, returnChannelID) {
-		return
-	}
+	go twitch.GetLiveStatuses()
+	m := discord.SayByID(channelID, "Gathering emotes for "+channelName).ID
+	messagesToDelete = append(messagesToDelete, m)
 
-	global.Directives = append(global.Directives, channel)
-
-	go discord.SayByID(returnChannelID, "Gathering emotes for "+channelName)
-	twitch.GetLiveStatuses()
 	ok := twitch.GetEmoteController(false, channel)
-	if ok {
-		twitch.Join(channelName)
-		go discord.SayByID(returnChannelID, channelName+" added successfully.")
-	} else {
-		go discord.SayByID(returnChannelID, "Could not retrieve "+channelName+"'s emotes...")
+	if !ok {
 		discord.DeleteDiscordChannel(channelName)
-	}
-}
-
-func updateDirective(returnChannelID string, messageID string, args []string) {
-	discord.DeleteDiscordMessage(returnChannelID, messageID)
-
-	if !checkArgFormatting(returnChannelID, args) {
-		return
+		discord.SayByIDAndDelete(channelID, "Could not retrieve "+channelName+"'s emotes...")
 	}
 
-	platform := args[0]
-	channelName := args[1]
-	connected, online, offline, commands, random := findSettings("update", args)
-
-	platformChannelID, discordChannelID, success := findChannelIDs("update", platform, channelName, returnChannelID)
-	if !success {
-		return
-	}
-
-	channel := global.Directive{
-		Platform:         platform,
-		ChannelName:      channelName,
-		ChannelID:        platformChannelID,
-		DiscordChannelID: discordChannelID,
-		Settings: global.DirectiveSettings{
-			Connected:          connected,
-			IsOnlineEnabled:    online,
-			IsOfflineEnabled:   offline,
-			AreCommandsEnabled: commands,
-			IsOptedIn:          random,
-		},
-	}
-
-	if !updateChannelTopic("update", channel, returnChannelID) {
-		return
-	}
-
-	for i := range global.Directives {
-		if global.Directives[i].ChannelName == channelName {
-			global.Directives[i] = channel
-		}
-	}
-
-	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" updated successfully.")
-}
-
-func connectionOfDirective(mode string, returnChannelID string, messageID string, args []string) {
-	defer discord.DeleteDiscordMessage(returnChannelID, messageID)
-
-	platform := args[0]
-	channelName := args[1]
-
-	existingArgs, success := findExistingSettings(channelName)
-	if !success {
-		stats.Log("failed to find existing args for " + channelName)
-		discord.Say("error-tracking", "failed to find existing args for "+channelName)
-	}
-
-	platformChannelID, discordChannelID, success := findChannelIDs("update", platform, channelName, returnChannelID)
-	if !success {
-		return
-	}
-
-	var connected bool
-
-	if mode == "connect" {
-		connected = true
+	err := global.UpdateChannels("add", channel)
+	if err == nil {
+		twitch.Join(channelName)
+		discord.SayByID(channelID, strings.Title(channelName)+" added successfully.")
 	} else {
-		connected = false
+		discord.DeleteDiscordChannel(channelName)
+		discord.SayByIDAndDelete(channelID, err.Error())
+	}
+}
+
+func addDirectiveAdvanced(channelID string, messageID string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	var messagesToDelete []string
+	defer func() {
+		for _, message := range messagesToDelete {
+			discord.DeleteDiscordMessage(channelID, message)
+		}
+	}()
+
+	dialogueOngoing = true
+	dialogueChannel = make(chan Dialogue)
+
+	defer func() {
+		dialogueOngoing = false
+		dialogueChannel = nil
+	}()
+
+	channel := global.Directive{}
+
+	// Get platform
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "What is the platform?\n(1) Twitch\n(2) Youtube").ID)
+	platform := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, platform.MessageID)
+	switch platform.Arguments[0] {
+	case "cancel":
+		dialogueOngoing = false
+		dialogueChannel = nil
+		return
+	case "1":
+		channel.Platform = "twitch"
+	case "2":
+		channel.Platform = "youtube"
 	}
 
-	channel := global.Directive{
-		Platform:         platform,
-		ChannelName:      channelName,
-		ChannelID:        platformChannelID,
-		DiscordChannelID: discordChannelID,
-		Settings: global.DirectiveSettings{
-			Connected:          connected,
-			IsOnlineEnabled:    existingArgs[1],
-			IsOfflineEnabled:   existingArgs[2],
-			AreCommandsEnabled: existingArgs[3],
-			IsOptedIn:          existingArgs[4],
-		},
+	// Get channel name
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "What is the channel name?").ID)
+	channelName := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, channelName.MessageID)
+	switch channelName.Arguments[0] {
+	case "cancel":
+		dialogueOngoing = false
+		dialogueChannel = nil
+		return
+	default:
+		channel.ChannelName = channelName.Arguments[0]
 	}
 
-	if !updateChannelTopic("update", channel, returnChannelID) {
+	// Return if channel is already added
+	for _, c := range global.Directives {
+		if c.ChannelName == channelName.Arguments[0] {
+			go discord.SayByIDAndDelete(channelID, "Channel is already added.")
+			return
+		}
+	}
+
+	// Get platform channel ID and discord channel ID
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "Gathering IDs...").ID)
+	platformChannelID, discordChannelID, success := findChannelIDs("add", channel.Platform, channelName.Arguments[0], channelID)
+	if !success {
+		return
+	}
+	channel.ChannelID = platformChannelID
+	channel.DiscordChannelID = discordChannelID
+
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "For the following options, type 0 if false and 1 if true:\n\n1. Will be collecting messages into Markov chain?\n2. Will message into online chat?\n3. Will message into offline chat?\n4. Will respond to mentions?").ID)
+	boolSettings := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, boolSettings.MessageID)
+	if boolSettings.Arguments[0] == "cancel" {
+		dialogueOngoing = false
+		dialogueChannel = nil
+		return
+	}
+	for i, setting := range boolSettings.Arguments {
+		if result, err := strconv.ParseBool(setting); err != nil {
+			discord.SayByIDAndDelete(channelID, "Unable to parse settings.")
+			discord.DeleteDiscordChannel(channelName.Arguments[0])
+			return
+		} else {
+			switch i {
+			case 0:
+				channel.Settings.Connected = result
+			case 1:
+				channel.Settings.IsOnlineEnabled = result
+			case 2:
+				channel.Settings.IsOfflineEnabled = result
+			case 3:
+				channel.Settings.AreCommandsEnabled = result
+			}
+		}
+	}
+
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "What chains will this channel use to respond with?\n\nAll (1)     All except self (2)     Self (3)     Custom (4)\n\nIf custom, what are the custom channels to use?").ID)
+	responseSettings := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, responseSettings.MessageID)
+	if responseSettings.Arguments[0] == "cancel" {
+		dialogueOngoing = false
+		dialogueChannel = nil
+		return
+	}
+	mode := responseSettings.Arguments[0]
+	customChannels := responseSettings.Arguments[1:]
+	switch mode {
+	case "1", "all", "All":
+		channel.Settings.WhichChannelsToUse = "all"
+	case "2", "all except self", "All except self":
+		channel.Settings.WhichChannelsToUse = "except self"
+	case "3", "self", "Self":
+		channel.Settings.WhichChannelsToUse = "self"
+	case "4", "custom", "Custom":
+		channel.Settings.WhichChannelsToUse = "custom"
+		channel.Settings.CustomChannelsToUse = customChannels
+	}
+
+	go twitch.GetLiveStatuses()
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "Gathering emotes for "+channelName.Arguments[0]).ID)
+
+	ok := twitch.GetEmoteController(false, channel)
+	if !ok {
+		discord.DeleteDiscordChannel(channelName.Arguments[0])
+		discord.SayByIDAndDelete(channelID, "Could not retrieve "+channelName.Arguments[0]+"'s emotes...")
+	}
+
+	err := global.UpdateChannels("add", channel)
+	if err == nil {
+		twitch.Join(channelName.Arguments[0])
+		discord.SayByID(channelID, channelName.Arguments[0]+" added successfully.")
+	} else {
+		discord.DeleteDiscordChannel(channelName.Arguments[0])
+		discord.SayByIDAndDelete(channelID, err.Error())
+	}
+}
+
+func updateDirective(channelID string, messageID string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	var messagesToDelete []string
+	defer func() {
+		for _, message := range messagesToDelete {
+			discord.DeleteDiscordMessage(channelID, message)
+		}
+	}()
+
+	defer func() {
+		dialogueOngoing = false
+		dialogueChannel = nil
+	}()
+
+	dialogueOngoing = true
+	dialogueChannel = make(chan Dialogue)
+
+	var channel *global.Directive
+
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "Which channel will you update?").ID)
+	channelName := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, channelName.MessageID)
+	if channelName.Arguments[0] == "cancel" {
+		dialogueOngoing = false
+		dialogueChannel = nil
 		return
 	}
 
-	for i := range global.Directives {
-		if global.Directives[i].ChannelName == channelName {
-			global.Directives[i] = channel
+	for _, directive := range *&global.Directives {
+		if channelName.Arguments[0] == directive.ChannelName {
+			channel = &directive
 		}
 	}
 
-	go discord.SayByIDAndDelete(returnChannelID, strings.Title(channelName)+" updated successfully.")
-}
-
-func checkArgFormatting(returnChannelID string, args []string) (ok bool) {
-	if len(args) < 2 {
-		go discord.SayByIDAndDelete(returnChannelID, "Proper formatting ->\n"+`"platformName", "channelName", "isConnected", "isOnlineEnabled", "isOfflineEnabled", "areCommandsEnabled", "isRandomChannelOutput"`)
-		return false
+	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "Which do you want to update?\n\n(1) Collecting messages for Markov chains\n(2) Allowing messages online\n(3) Allowing messages offline\n(4) Alowing to reply when mentioned\n(5) Which channels to use").ID)
+	settingsToUpdate := <-dialogueChannel
+	messagesToDelete = append(messagesToDelete, settingsToUpdate.MessageID)
+	if settingsToUpdate.Arguments[0] == "cancel" {
+		dialogueOngoing = false
+		dialogueChannel = nil
+		return
 	}
-	return true
-}
-
-func findExistingSettings(channelName string) (args []bool, success bool) {
-	for i := 0; i < len(global.Directives); i++ {
-		if global.Directives[i].ChannelName == channelName {
-			args = append(args, global.Directives[i].Settings.Connected)
-			args = append(args, global.Directives[i].Settings.IsOnlineEnabled)
-			args = append(args, global.Directives[i].Settings.IsOfflineEnabled)
-			args = append(args, global.Directives[i].Settings.AreCommandsEnabled)
-			args = append(args, global.Directives[i].Settings.IsOptedIn)
-			return args, true
+	for _, setting := range settingsToUpdate.Arguments {
+		if setting == "1" {
+			channel.Settings.Connected = !channel.Settings.Connected
+		}
+		if setting == "2" {
+			channel.Settings.IsOnlineEnabled = !channel.Settings.IsOnlineEnabled
+		}
+		if setting == "3" {
+			channel.Settings.IsOfflineEnabled = !channel.Settings.IsOfflineEnabled
+		}
+		if setting == "4" {
+			channel.Settings.AreCommandsEnabled = !channel.Settings.AreCommandsEnabled
+		}
+		if setting == "5" {
+			messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "What chains will this channel use to respond with?\n\nAll (1)     All except self (2)     Self (3)     Custom (4)\n\nIf custom, what are the custom channels to use?").ID)
+			responseSettings := <-dialogueChannel
+			messagesToDelete = append(messagesToDelete, responseSettings.MessageID)
+			if responseSettings.Arguments[0] == "cancel" {
+				dialogueOngoing = false
+				dialogueChannel = nil
+				return
+			}
+			mode := responseSettings.Arguments[0]
+			customChannels := responseSettings.Arguments[1:]
+			switch mode {
+			case "1", "all", "All":
+				channel.Settings.WhichChannelsToUse = "all"
+			case "2", "all except self", "All except self":
+				channel.Settings.WhichChannelsToUse = "except self"
+			case "3", "self", "Self":
+				channel.Settings.WhichChannelsToUse = "self"
+			case "4", "custom", "Custom":
+				channel.Settings.WhichChannelsToUse = "custom"
+				channel.Settings.CustomChannelsToUse = customChannels
+			}
 		}
 	}
-	return args, false
-}
 
-func findSettings(mode string, args []string) (connected bool, online bool, offline bool, commands bool, random bool) {
-	if mode == "add" {
-		args = append(args, "true", "false", "false", "false", "false")
+	err := global.UpdateChannels("update", *channel)
+	if err == nil {
+		discord.SayByID(channelID, strings.Title(channelName.Arguments[0])+" updated successfully.")
 	} else {
-		args = append(args, "false", "false", "false", "false", "false")
+		discord.SayByIDAndDelete(channelID, err.Error())
 	}
-
-	connected = true
-	online = false
-	offline = false
-	commands = false
-	random = false
-
-	if args[2] == "false" {
-		connected = false
-	}
-	if args[3] == "true" {
-		online = true
-	}
-	if args[4] == "true" {
-		offline = true
-	}
-	if args[5] == "true" {
-		commands = true
-	}
-	if args[6] == "true" {
-		random = true
-	}
-
-	return connected, online, offline, commands, random
 }
 
 func findChannelIDs(mode string, platform string, channelName string, returnChannelID string) (platformChannelID string, discordChannelID string, success bool) {
@@ -483,53 +555,172 @@ func removeDirective(channelName string) (success bool) {
 	return false
 }
 
-func updateChannelTopic(mode string, channel global.Directive, returnChannelID string) (success bool) {
-	_, ok := discord.UpdateDirectiveChannel(channel)
-	if !ok {
-		if mode == "add" {
-			discord.DeleteDiscordChannel(channel.ChannelName)
+func AddRegex(channelID string, messageID string, args []string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	if len(args) == 0 {
+		go discord.SayByIDAndDelete(channelID, "No regex provided.")
+		return
+	}
+
+	for _, regexToAdd := range args {
+		exists := false
+		for _, regexExisting := range global.RegexList {
+			if regexExisting == regexToAdd {
+				go discord.SayByIDAndDelete(channelID, regexToAdd+" is already added.")
+				exists = true
+			}
 		}
 
-		go discord.SayByIDAndDelete(returnChannelID, "Failed to "+mode+" Discord channel.")
-		return false
+		if !exists {
+			global.RegexList = append(global.RegexList, regexToAdd)
+		}
 	}
-	return true
+
+	err := global.UpdateRegex()
+	if err != nil {
+		go discord.SayByIDAndDelete(channelID, "Error:\n"+err.Error())
+	} else {
+		go discord.SayByIDAndDelete(channelID, "Regex successfully updated.")
+	}
+}
+
+func RemoveRegex(channelID string, messageID string, args []string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	if len(args) == 0 {
+		go discord.SayByIDAndDelete(channelID, "No regex provided.")
+		return
+	}
+
+	for _, regexToRemove := range args {
+		exists := false
+		for i, regexExisting := range global.RegexList {
+			if regexToRemove == regexExisting {
+				global.RegexList = global.FastRemove(global.RegexList, i)
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			go discord.SayByIDAndDelete(channelID, regexToRemove+" is not on the list.")
+		}
+	}
+
+	err := global.UpdateRegex()
+	if err != nil {
+		go discord.SayByIDAndDelete(channelID, "Error:\n"+err.Error())
+	} else {
+		go discord.SayByIDAndDelete(channelID, "Regex successfully updated.")
+	}
+}
+
+func SendRegex(channelID string, messageID string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+	discord.SayByIDAndDelete(channelID, strings.Join(global.RegexList, ",\n"))
+}
+
+func AddBannedUser(channelID string, messageID string, args []string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	if len(args) == 0 {
+		go discord.SayByIDAndDelete(channelID, "No users provided.")
+		return
+	}
+
+	for _, userToAdd := range args {
+		exists := false
+		for _, userExisting := range global.BannedUsers {
+			if userExisting == userToAdd {
+				go discord.SayByIDAndDelete(channelID, userToAdd+" is already added.")
+				exists = true
+			}
+		}
+
+		if !exists {
+			global.BannedUsers = append(global.BannedUsers, userToAdd)
+		}
+	}
+
+	err := global.SaveBannedUsers()
+	if err != nil {
+		go discord.SayByIDAndDelete(channelID, "Error:\n"+err.Error())
+	} else {
+		go discord.SayByIDAndDelete(channelID, "Banned users successfully updated.")
+	}
+}
+
+func RemoveBannedUser(channelID string, messageID string, args []string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+
+	if len(args) == 0 {
+		go discord.SayByIDAndDelete(channelID, "No regex provided.")
+		return
+	}
+
+	for _, userToRemove := range args {
+		exists := false
+		for i, userExisting := range global.BannedUsers {
+			if userToRemove == userExisting {
+				global.BannedUsers = global.FastRemove(global.BannedUsers, i)
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			go discord.SayByIDAndDelete(channelID, userToRemove+" is not on the list.")
+		}
+	}
+
+	err := global.SaveBannedUsers()
+	if err != nil {
+		go discord.SayByIDAndDelete(channelID, "Error:\n"+err.Error())
+	} else {
+		go discord.SayByIDAndDelete(channelID, "Banned users successfully updated.")
+	}
+}
+
+func SendBannedUsers(channelID string, messageID string) {
+	defer discord.DeleteDiscordMessage(channelID, messageID)
+	discord.SayByIDAndDelete(channelID, strings.Join(global.BannedUsers, ",\n"))
 }
 
 // UpdateResourceAndChannel updates a resource and the correlated Discord channel.
 //
 // mode = "add" || "remove"
-func UpdateResourceAndChannel(resourceType string, mode string, returnChannelID string, messageID string, entries []string) {
-	defer discord.DeleteDiscordMessage(returnChannelID, messageID)
+// func UpdateResourceAndChannel(resourceType string, mode string, returnChannelID string, messageID string, entries []string) {
+// 	defer discord.DeleteDiscordMessage(returnChannelID, messageID)
 
-	for i := 0; i < len(global.Resources); i++ {
-		if resourceType == global.Resources[i].DiscordChannelName {
-			switch mode {
+// 	for i := 0; i < len(global.Resources); i++ {
+// 		if resourceType == global.Resources[i].DiscordChannelName {
+// 			switch mode {
 
-			case "add":
-				for _, entry := range entries {
-					if global.Resources[i].Content == "" {
-						global.Resources[i].Content = entry + " "
-					} else {
-						global.Resources[i].Content = global.Resources[i].Content + entry + " "
-					}
-				}
-			case "remove":
-				for _, entry := range entries {
-					global.Resources[i].Content = strings.ReplaceAll(global.Resources[i].Content, entry+" ", "")
-				}
-			}
+// 			case "add":
+// 				for _, entry := range entries {
+// 					if global.Resources[i].Content == "" {
+// 						global.Resources[i].Content = entry + " "
+// 					} else {
+// 						global.Resources[i].Content = global.Resources[i].Content + entry + " "
+// 					}
+// 				}
+// 			case "remove":
+// 				for _, entry := range entries {
+// 					global.Resources[i].Content = strings.ReplaceAll(global.Resources[i].Content, entry+" ", "")
+// 				}
+// 			}
 
-			_, ok := discord.UpdateResourceChannel(global.Resources[i])
-			if !ok {
-				go discord.SayByIDAndDelete(returnChannelID, "Failed to update "+resourceType+".")
-			} else {
-				go discord.SayByIDAndDelete(returnChannelID, "Successfully updated "+resourceType+".")
-			}
-		}
-	}
-	global.UpdateResourceLists()
-}
+// 			_, ok := discord.UpdateResourceChannel(global.Resources[i])
+// 			if !ok {
+// 				go discord.SayByIDAndDelete(returnChannelID, "Failed to update "+resourceType+".")
+// 			} else {
+// 				go discord.SayByIDAndDelete(returnChannelID, "Successfully updated "+resourceType+".")
+// 			}
+// 		}
+// 	}
+// 	global.UpdateResourceLists()
+// }
 
 func removeDeterminers(content string) (target string) {
 	s := strings.Split(clearNonAlphanumeric(content), " ")

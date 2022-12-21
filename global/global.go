@@ -46,10 +46,10 @@ var (
 	TwitterBearerToken       string
 
 	Directives    []Directive
-	Resources     []Resource
 	TotalChannels = make(map[string]string)
 
 	BannedUsers []string
+	RegexList   []string
 	Regex       *regexp.Regexp
 )
 
@@ -75,6 +75,10 @@ func Start() {
 	// Twitter
 	TwitterAccessToken = os.Getenv("TWITTER_ACCESS_TOKEN")
 	TwitterAccessTokenSecret = os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
+
+	LoadChannels()
+	LoadRegex()
+	LoadBannedUsers()
 
 	// LoadDirective()
 	// LoadStatisticsJson()

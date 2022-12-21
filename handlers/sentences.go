@@ -60,7 +60,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 	connected := directive.Settings.Connected
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
-	random := directive.Settings.IsOptedIn
+	channelsToUse := directive.Settings.WhichChannelsToUse
 
 	twitch.IsLiveMx.Lock()
 	live := twitch.IsLive[directive.ChannelName]
@@ -80,8 +80,23 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		timesRecursed := 0
 
 	recurse:
-		if random || !connected {
-			chainToUse = GetRandomChannel(directive.ChannelName)
+		switch channelsToUse {
+		default:
+			chainToUse = GetRandomChannel("all", directive.ChannelName)
+		case "self":
+			if !connected {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			} else {
+				chainToUse = directive.ChannelName
+			}
+		case "all", "except self":
+			chainToUse = GetRandomChannel(channelsToUse, directive.ChannelName)
+		case "custom":
+			if len(directive.Settings.CustomChannelsToUse) > 0 {
+				chainToUse = global.PickRandomFromSlice(directive.Settings.CustomChannelsToUse)
+			} else {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			}
 		}
 
 		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
@@ -128,7 +143,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
 	commandsEnabled := directive.Settings.AreCommandsEnabled
-	random := directive.Settings.IsOptedIn
+	channelsToUse := directive.Settings.WhichChannelsToUse
 
 	twitch.IsLiveMx.Lock()
 	live := twitch.IsLive[directive.ChannelName]
@@ -144,8 +159,23 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		timesRecursed := 0
 
 	recurse:
-		if random || !connected {
-			chainToUse = GetRandomChannel(directive.ChannelName)
+		switch channelsToUse {
+		default:
+			chainToUse = GetRandomChannel("all", directive.ChannelName)
+		case "self":
+			if !connected {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			} else {
+				chainToUse = directive.ChannelName
+			}
+		case "all", "except self":
+			chainToUse = GetRandomChannel(channelsToUse, directive.ChannelName)
+		case "custom":
+			if len(directive.Settings.CustomChannelsToUse) > 0 {
+				chainToUse = global.PickRandomFromSlice(directive.Settings.CustomChannelsToUse)
+			} else {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			}
 		}
 
 		var method string

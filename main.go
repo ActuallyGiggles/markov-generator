@@ -60,8 +60,8 @@ func Start() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go discord.Start(c, &wg)
-	stats.Log("Discord started")
 	wg.Wait()
+	stats.Log("Discord started")
 
 	i := markov.StartInstructions{
 		WriteMode:     "interval",
