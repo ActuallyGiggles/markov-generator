@@ -267,7 +267,7 @@ func addDirectiveSimple(channelID string, messageID string, args []string) {
 		},
 	}
 
-	go twitch.GetLiveStatuses()
+	go twitch.GetLiveStatuses(false)
 	m := discord.SayByID(channelID, "Gathering emotes for "+channelName).ID
 	messagesToDelete = append(messagesToDelete, m)
 
@@ -401,7 +401,7 @@ func addDirectiveAdvanced(channelID string, messageID string) {
 		channel.Settings.CustomChannelsToUse = customChannels
 	}
 
-	go twitch.GetLiveStatuses()
+	go twitch.GetLiveStatuses(false)
 	messagesToDelete = append(messagesToDelete, discord.SayByID(channelID, "Gathering emotes for "+channelName.Arguments[0]).ID)
 
 	ok := twitch.GetEmoteController(false, channel)
@@ -750,14 +750,21 @@ func clearNonAlphanumeric(str string) string {
 	return nonAlphanumericRegex.ReplaceAllString(str, "")
 }
 
-func isQuestion(content string) bool {
-	questionWords := []string{"will", "is", "does", "do", "are", "have"}
+func questionType(content string) (questionType string) {
+	yesNoWords := []string{"will", "is", "does", "do", "are", "have"}
+	explanationWords := []string{"why", "how"}
 
-	for _, q := range questionWords {
-		if strings.HasPrefix(content, q) || strings.HasSuffix(content, "?") {
-			return true
+	for _, q := range yesNoWords {
+		if strings.HasPrefix(content, q) {
+			return "yes no question"
 		}
 	}
 
-	return false
+	for _, q := range explanationWords {
+		if strings.HasPrefix(content, q) {
+			return "explanation question"
+		}
+	}
+
+	return "not a question"
 }

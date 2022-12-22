@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"markov-generator/api"
@@ -47,21 +48,18 @@ func main() {
 }
 
 func Start() {
-	stats.Log("Initializing")
-
 	c := make(chan platform.Message)
 
 	global.Start()
-	stats.Log("Global started")
 
 	go twitter.Start()
-	stats.Log("Twitter started")
+	fmt.Println("✅ Twitter started")
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go discord.Start(c, &wg)
 	wg.Wait()
-	stats.Log("Discord started")
+	fmt.Println("✅ Discord started")
 
 	i := markov.StartInstructions{
 		WriteMode:     "interval",
@@ -74,22 +72,16 @@ func Start() {
 		Debug:    false,
 	}
 	markov.Start(i)
-	stats.Log("Markov started")
+	fmt.Println("✅ Markov Started")
 
 	go handlers.MsgHandler(c)
-	stats.Log("Handler started")
 
-	stats.Log("Gathering emotes")
 	twitch.GatherEmotes()
-	stats.Log("Gathered emotes")
 
 	go api.HandleRequests()
-	stats.Log("API started")
 
 	go twitch.Start(c)
-	stats.Log("Twitch Started")
+	fmt.Println("✅ Twitch Started")
 
 	stats.Start()
-
-	stats.Log("Initialization complete")
 }

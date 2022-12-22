@@ -181,9 +181,14 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		var method string
 		var target string
 
-		if q := isQuestion(msg.Content); q {
+		noMentionMsgContent := strings.Join(strings.Split(msg.Content, " ")[1:], " ")
+		questionType := questionType(noMentionMsgContent)
+		if questionType == "yes no question" {
 			method = "TargetedBeginning"
-			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely not", "absolutely", "who knows"})
+			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely", "absolutely", "who knows"})
+		} else if questionType == "explanation question" {
+			method = "TargetedBeginning"
+			target = global.PickRandomFromSlice([]string{"because", "idk", "idc"})
 		} else {
 			method = global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
 			target = removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
