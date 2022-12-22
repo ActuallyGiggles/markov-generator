@@ -35,10 +35,7 @@ func Start(ch chan platform.Message, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	// ok := GetDirectivesAndResources(discord)
-	// if !ok {
-	// 	panic("Directives and Resources not initialized.")
-	// }
+	CollectAllDiscordChannelID(discord)
 
 	discord.AddHandler(messageHandler)
 	discord.AddHandler(reactionHandler)
@@ -95,9 +92,16 @@ func SayByID(channelId string, message string) (id *discordgo.Message) {
 }
 
 func Say(channel string, message string) {
-	for k, v := range global.TotalChannels {
-		if k == channel {
-			_, err := discord.ChannelMessageSend(v, wrapInCodeBlock(message))
+	if channel == "all" {
+		_, err := discord.ChannelMessageSend(global.DiscordAllChannelID, wrapInCodeBlock(message))
+		if err != nil {
+			stats.Log("Say failed \n" + err.Error())
+		}
+		return
+	}
+	for _, directive := range global.Directives {
+		if directive.ChannelName == channel {
+			_, err := discord.ChannelMessageSend(directive.DiscordChannelID, wrapInCodeBlock(message))
 			if err != nil {
 				stats.Log("Say failed \n" + err.Error())
 			}
@@ -108,10 +112,19 @@ func Say(channel string, message string) {
 }
 
 func SayMention(channel string, mention string, message string) {
-	for k, v := range global.TotalChannels {
-		if k == channel {
-			content := mention + "\n" + message
-			_, err := discord.ChannelMessageSend(v, content)
+	content := mention + "\n" + message
+
+	if channel == "all" {
+		_, err := discord.ChannelMessageSend(global.DiscordAllChannelID, content)
+		if err != nil {
+			stats.Log("Say failed \n" + err.Error())
+		}
+		return
+	}
+
+	for _, directive := range global.Directives {
+		if directive.ChannelName == channel {
+			_, err := discord.ChannelMessageSend(directive.DiscordChannelID, content)
 			if err != nil {
 				stats.Log("Say failed \n" + err.Error())
 			}
@@ -170,53 +183,21 @@ func DeleteDiscordMessage(channelID string, messageID string) {
 	}
 }
 
-// // GetDirectives collects the name and setting of each channel in Discord, then adds it to global.Directives.
-// //
-// // Returns if function is successful.
-// func GetDirectivesAndResources(session *discordgo.Session) (ok bool) {
-// 	doBannedUsersExist := false
-// 	doesRegexExist := false
+func CollectAllDiscordChannelID(session *discordgo.Session) (ok bool) {
+	channels, err := GetChannels(session)
+	if err != nil {
+		panic(err)
+	}
 
-// 	channels, err := GetChannels(session)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	for _, channel := range channels {
+		channel = *&channel
+		if channel.Name == "all" {
+			global.DiscordAllChannelID = channel.ID
+		}
+	}
 
-// 	for _, channel := range channels {
-// 		channel = *&channel
-// 		if _, ok := global.TotalChannels[channel.Name]; !ok {
-// 			global.TotalChannels[channel.Name] = channel.ID
-// 		}
-
-// 		if channel.Topic == "" || channel.Topic == "non-directive" {
-// 			continue
-// 		}
-
-// 		if strings.HasPrefix(channel.Topic, "resource") {
-// 			if channel.Name == "banned-users" {
-// 				doBannedUsersExist = true
-// 				getResource("banned-users", channel)
-// 			} else if channel.Name == "regex" {
-// 				doesRegexExist = true
-// 				getResource("regex", channel)
-// 			}
-// 			continue
-// 		}
-
-// 		getDirective(channel.Topic)
-// 	}
-
-// 	if !doBannedUsersExist {
-// 		createResource("banned-users")
-// 		stats.Log("Created banned-users.")
-// 	}
-// 	if !doesRegexExist {
-// 		createResource("regex")
-// 		stats.Log("Created regex.")
-// 	}
-
-// 	return true
-// }
+	return true
+}
 
 // // UpdateDirectiveChannel updates a directive channel topic on Discord.
 // //

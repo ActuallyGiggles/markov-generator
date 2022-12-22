@@ -35,6 +35,7 @@ var (
 	DiscordBotID        string
 	DiscordModChannelID string
 	DiscordTweetEmote   string
+	DiscordAllChannelID string
 
 	// Twitter variables
 	TwitterAPIKey            string
@@ -45,8 +46,7 @@ var (
 	TwitterClientSecret      string
 	TwitterBearerToken       string
 
-	Directives    []Directive
-	TotalChannels = make(map[string]string)
+	Directives []Directive
 
 	BannedUsers []string
 	RegexList   []string
