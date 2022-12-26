@@ -29,13 +29,14 @@ var (
 	EmotesMx                sync.Mutex
 
 	// Discord variables
-	DiscordToken        string
-	DiscordGuildID      string
-	DiscordOwnerID      string
-	DiscordBotID        string
-	DiscordModChannelID string
-	DiscordTweetEmote   string
-	DiscordAllChannelID string
+	DiscordToken               string
+	DiscordGuildID             string
+	DiscordOwnerID             string
+	DiscordBotID               string
+	DiscordModChannelID        string
+	DiscordTweetEmote          string
+	DiscordAllChannelID        string
+	DiscordQuarantineChannelID string
 
 	// Twitter variables
 	TwitterAPIKey            string

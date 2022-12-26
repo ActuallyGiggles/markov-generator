@@ -27,37 +27,42 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 		for _, directive := range global.Directives {
 			routineBroadcastersUpdate(directive)
 			if isInit {
-				bar.Add(1)
+				pb.UpdateTitle("Getting broadcasters info...")
+				pb.Increment()
 			}
 		}
 
 		if isInit {
+			pb.UpdateTitle("Getting global emotes")
 			getTwitchGlobalEmotes()
-			bar.Add(1)
+			pb.Increment()
 			get7tvGlobalEmotes()
-			bar.Add(1)
+			pb.Increment()
 			getBttvGlobalEmotes()
-			bar.Add(1)
+			pb.Increment()
 			getFfzGlobalEmotes()
-			bar.Add(1)
+			pb.Increment()
 		}
 
 		for _, c := range Broadcasters {
+			if isInit {
+				pb.UpdateTitle("Getting channel emotes: " + c.Login + "...")
+			}
 			getTwitchChannelEmotes(c)
 			if isInit {
-				bar.Add(1)
+				pb.Increment()
 			}
 			get7tvChannelEmotes(c)
 			if isInit {
-				bar.Add(1)
+				pb.Increment()
 			}
 			getBttvChannelEmotes(c)
 			if isInit {
-				bar.Add(1)
+				pb.Increment()
 			}
 			getFfzChannelEmotes(c)
 			if isInit {
-				bar.Add(1)
+				pb.Increment()
 			}
 		}
 

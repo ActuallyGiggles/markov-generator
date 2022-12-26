@@ -2,23 +2,24 @@ package twitch
 
 import (
 	"markov-generator/global"
+	"markov-generator/print"
 	"sync"
 	"time"
 
-	"github.com/schollz/progressbar/v3"
+	"github.com/pterm/pterm"
 )
 
 var (
 	IsLive   = make(map[string]bool)
 	IsLiveMx sync.Mutex
-	bar      *progressbar.ProgressBar
+	pb       *pterm.ProgressbarPrinter
 )
 
 func GatherEmotes() {
-	bar = progressbar.Default(int64(4+len(global.Directives)*6), "Collecting Twitch API information...")
+	pb = print.ProgressBar("Collecting Twitch API information...", 4+len(global.Directives)*6)
 	GetLiveStatuses(true)
 	GetEmoteController(true, global.Directive{})
-	bar.Clear()
+	pb.Stop()
 
 	go updateLiveStatuses()
 	go refreshEmotes()

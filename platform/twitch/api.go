@@ -414,7 +414,8 @@ func GetLiveStatuses(isInit bool) {
 		r := GetLiveStatus(channel.ChannelName)
 		IsLive[channel.ChannelName] = r
 		if isInit {
-			bar.Add(1)
+			pb.UpdateTitle("Getting live statuses...")
+			pb.Increment()
 		}
 	}
 }

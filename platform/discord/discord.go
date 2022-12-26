@@ -99,6 +99,15 @@ func Say(channel string, message string) {
 		}
 		return
 	}
+
+	if channel == "quarantine" {
+		_, err := discord.ChannelMessageSend(global.DiscordQuarantineChannelID, wrapInCodeBlock(message))
+		if err != nil {
+			stats.Log("Say failed \n" + err.Error())
+		}
+		return
+	}
+
 	for _, directive := range global.Directives {
 		if directive.ChannelName == channel {
 			_, err := discord.ChannelMessageSend(directive.DiscordChannelID, wrapInCodeBlock(message))
@@ -116,6 +125,14 @@ func SayMention(channel string, mention string, message string) {
 
 	if channel == "all" {
 		_, err := discord.ChannelMessageSend(global.DiscordAllChannelID, content)
+		if err != nil {
+			stats.Log("Say failed \n" + err.Error())
+		}
+		return
+	}
+
+	if channel == "quarantine" {
+		_, err := discord.ChannelMessageSend(global.DiscordQuarantineChannelID, content)
 		if err != nil {
 			stats.Log("Say failed \n" + err.Error())
 		}
@@ -193,6 +210,10 @@ func CollectAllDiscordChannelID(session *discordgo.Session) (ok bool) {
 		channel = *&channel
 		if channel.Name == "all" {
 			global.DiscordAllChannelID = channel.ID
+		}
+
+		if channel.Name == "quarantine" {
+			global.DiscordQuarantineChannelID = channel.ID
 		}
 	}
 
