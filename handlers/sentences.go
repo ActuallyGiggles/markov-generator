@@ -123,14 +123,14 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
+				fmt.Println("immitation")
+				stats.Log("Could not create immitation sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {
 					timesRecursed++
 					goto recurse
 				}
 			}
-
-			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
 
 		return
@@ -218,14 +218,14 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
+				fmt.Println("mentioning")
+				stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {
 					timesRecursed++
 					goto recurse
 				}
 			}
-
-			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
 
 		return
