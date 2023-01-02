@@ -9,12 +9,21 @@ import (
 var writeInputsCounter int
 
 func writeCounter() {
-	if writeMode == "counter" {
-		writeInputsCounter++
-		if writeInputsCounter > writeInputLimit {
-			go writeLoop()
-		}
+	if writeMode != "counter" {
+		return
 	}
+
+	writeInputsCounter++
+
+	if writeInputsCounter < writeInputLimit {
+		return
+	}
+
+	if zipping {
+		return
+	}
+
+	go writeLoop()
 }
 
 func writeTicker() {
@@ -34,18 +43,35 @@ func writeTicker() {
 	stats.NextWriteTime = time.Now().Add(time.Duration(writeInterval) * unit)
 	for range time.Tick(time.Duration(writeInterval) * unit) {
 		stats.NextWriteTime = time.Now().Add(time.Duration(writeInterval) * unit)
+
 		go writeLoop()
 	}
 }
 
 func writeLoop() {
+	if writing {
+		return
+	}
+
+zippingLoop:
+	debugLog("write ticker went off")
+	if zipping {
+		debugLog("cannot write because currently zipping -- trying again in 30s")
+		time.Sleep(30 * time.Second)
+		goto zippingLoop
+	}
+
+	writing = true
+
+	debugLog("write loop started")
+
+	defer report(track("writing completed"))
+
 	for _, w := range workerMap {
 		w.ChainMx.Lock()
-		debugLog("Write Locked")
 
 		if w.Intake == 0 {
 			w.ChainMx.Unlock()
-			debugLog("Write Unlocked")
 			continue
 		}
 
@@ -64,11 +90,12 @@ func writeLoop() {
 		w.Intake = 0
 
 		w.ChainMx.Unlock()
-		debugLog("Write Unlocked")
 	}
 
 	writeInputsCounter = 0
 	saveStats()
+
+	writing = false
 }
 
 func (w *worker) writeHead() {
@@ -166,7 +193,7 @@ func (w *worker) writeHead() {
 }
 
 func (w *worker) writeTail() {
-	defer duration(track("[WRITE HEAD] " + w.Name))
+	defer duration(track("[WRITE TAIL] " + w.Name))
 
 	defaultPath := "./markov-chains/" + w.Name + "_tail.json"
 	newPath := "./markov-chains/" + w.Name + "_tail_new.json"
@@ -260,7 +287,7 @@ func (w *worker) writeTail() {
 }
 
 func (w *worker) writeBody() {
-	defer duration(track("[WRITE TAIL] " + w.Name))
+	defer duration(track("[WRITE BODY] " + w.Name))
 
 	defaultPath := "./markov-chains/" + w.Name + "_body.json"
 	newPath := "./markov-chains/" + w.Name + "_body_new.json"

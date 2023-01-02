@@ -68,16 +68,24 @@ func PrettyPrint(v interface{}) {
 	}
 }
 
-func track(chain string) (string, time.Time) {
-	return chain, time.Now()
+func track(process string) (string, time.Time) {
+	return process, time.Now()
 }
 
-func duration(chain string, start time.Time) {
-	debugLog(chain + ": " + fmt.Sprint(time.Since(start)))
+func duration(process string, start time.Time) string {
+	return process + ": " + fmt.Sprint(time.Since(start))
 }
 
-// CurrentChains returns the names of all chains that have been made.
-func CurrentChains() []string {
+func report(process string, start time.Time) {
+	if durations == nil {
+		return
+	}
+
+	durations <- process + ":" + fmt.Sprint(time.Since(start).Round(1*time.Second))
+}
+
+// CurrentWorkers returns the names of all workers that have been made.
+func CurrentWorkers() []string {
 	workerMapMx.Lock()
 	var s []string
 	for chain := range workerMap {

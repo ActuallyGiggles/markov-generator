@@ -42,7 +42,8 @@ recurse:
 			return
 		}
 	} else {
-		if strings.Contains(err.Error(), "not found in directory") {
+		if strings.Contains(err.Error(), "not found in directory") ||
+			strings.Contains(err.Error(), "Currently zipping") {
 			return
 		}
 	}
@@ -103,8 +104,8 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		target := removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
 
 		oi := markov.OutputInstructions{
-			Method: method,
 			Chain:  chainToUse,
+			Method: method,
 			Target: target,
 		}
 		output, err := markov.Out(oi)
@@ -115,6 +116,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 			// Recurse if expected error
 			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
 				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(err.Error(), "Currently zipping") ||
 				strings.Contains(output, "@") {
 				if timesRecursed < recursionLimit {
 					timesRecursed++
@@ -123,7 +125,6 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
-				fmt.Println("immitation")
 				stats.Log("Could not create immitation sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {
@@ -155,7 +156,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		}
 
 		chainToUse := directive.ChannelName
-		recursionLimit := len(markov.CurrentChains())
+		recursionLimit := len(markov.CurrentWorkers())
 		timesRecursed := 0
 
 	recurse:
@@ -210,6 +211,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			// Recurse if expected error
 			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
 				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(err.Error(), "Currently zipping") ||
 				strings.Contains(output, "@") {
 				if timesRecursed < recursionLimit {
 					timesRecursed++
@@ -218,7 +220,6 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
-				fmt.Println("mentioning")
 				stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {

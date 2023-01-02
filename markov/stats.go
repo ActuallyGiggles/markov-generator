@@ -44,7 +44,7 @@ func updateStats() {
 	stats.InputCountLimit = writeInputLimit
 	stats.TimeUntilWrite = stats.NextWriteTime.Sub(time.Now())
 
-	stats.Workers = len(CurrentChains())
+	stats.Workers = len(CurrentWorkers())
 }
 
 func Stats() (statistics Statistics) {

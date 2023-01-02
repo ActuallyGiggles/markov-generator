@@ -2,7 +2,6 @@ package stats
 
 import (
 	"fmt"
-	"log"
 	"markov-generator/markov"
 	"runtime"
 	"time"
@@ -36,7 +35,6 @@ func intakePerHour() {
 }
 
 func Log(message ...string) {
-	log.Println(message)
 	ct := time.Now()
 	year, month, day := ct.Date()
 	hour := ct.Hour()

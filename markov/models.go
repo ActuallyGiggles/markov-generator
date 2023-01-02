@@ -15,15 +15,25 @@ import (
 // 	WriteLimit: To trigger a write cycle after x amount of ins, or entries.
 // 	StartKey: What string can be used to mark the beginning of a message. (E.g. !-)
 // 	EndKey: What string can be used to mark the end of a message. (E.g. -!)
+//  ReportDurations: If you would like the bot to report the duration of writing cycles or zip cycles, provide a channel. Otherwise, leave as nil.
+//  Zip: Whether or not to zip the markov-chains folder every 24 hours.
 // 	Debug: Print logs of stuffs.
 type StartInstructions struct {
-	WriteMode     string
+	WriteMode string
+
 	WriteInterval int
 	IntervalUnit  string
-	WriteLimit    int
-	StartKey      string
-	EndKey        string
-	Debug         bool
+
+	WriteLimit int
+
+	StartKey string
+	EndKey   string
+
+	ReportDurations chan string
+
+	ShouldZip bool
+
+	Debug bool
 }
 
 // OutputInstructions details instructions on how to make an output.

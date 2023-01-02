@@ -16,6 +16,10 @@ func Out(oi OutputInstructions) (output string, err error) {
 
 	defer duration(track("OUTPUT: " + name))
 
+	// if zipping {
+	// 	return "", errors.New("Currently zipping, try again later.")
+	// }
+
 	if exists := chainExists(name); !exists {
 		fmt.Println(oi)
 		return "", errors.New("Chain '" + name + "' is not found in directory.")

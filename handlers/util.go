@@ -217,10 +217,11 @@ func unlockResponse(timer int, channel string) {
 	respondLockMx.Unlock()
 }
 
+// GetRandomChannel will return a random channel, unless mode == "except self", in which case channel won't be included.
 func GetRandomChannel(mode string, channel string) (randomChannel string) {
 	var s []string
 
-	chains := markov.CurrentChains()
+	chains := markov.CurrentWorkers()
 	for _, chain := range chains {
 		if mode == "except self" && chain == channel {
 			continue

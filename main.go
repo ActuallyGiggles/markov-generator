@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io"
-	"log"
+	"context"
+	"fmt"
 	"markov-generator/api"
 	"markov-generator/global"
 	"markov-generator/handlers"
@@ -12,38 +12,31 @@ import (
 	"markov-generator/platform/twitter"
 	"markov-generator/print"
 	"markov-generator/stats"
+	"strings"
+	"time"
 
 	"sync"
 
-	"os"
 	"os/signal"
 	"syscall"
 
 	"markov-generator/markov"
 
 	"github.com/pkg/profile"
+	"github.com/pterm/pterm"
 )
 
 func main() {
 	// Profiling
 	defer profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook).Stop()
 
-	// Logging
-	file, err := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	wrt := io.MultiWriter(os.Stdout, file)
-	log.SetOutput(wrt)
-
 	// Keep open
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer cancel()
 
 	Start()
 
-	<-sc
+	<-ctx.Done()
 	stats.Log("Stopping...")
 }
 
@@ -63,15 +56,20 @@ func Start() {
 	wg.Wait()
 	print.Success("Discord")
 
+	durationReports := make(chan string)
+	go printReports(durationReports)
+
 	i := markov.StartInstructions{
 		WriteMode:     "interval",
 		WriteInterval: 10,
 		IntervalUnit:  "minutes",
 		// WriteMode:  "counter",
 		// WriteLimit: 10,
-		StartKey: "b5G(n1$I!4g",
-		EndKey:   "e1$D(n7",
-		Debug:    false,
+		StartKey:        "b5G(n1$I!4g",
+		EndKey:          "e1$D(n7",
+		ReportDurations: durationReports,
+		Debug:           false,
+		ShouldZip:       true,
 	}
 	markov.Start(i)
 	print.Success("Markov")
@@ -88,5 +86,16 @@ func Start() {
 
 	stats.Start()
 
-	print.Success("Program Started")
+	print.Success("Program Started at " + time.Now().Format(time.RFC822))
+}
+
+func printReports(reports chan string) {
+	for report := range reports {
+		split := strings.Split(report, ":")
+		process, duration := split[0], split[1]
+
+		pterm.Println()
+		print.Success(process + fmt.Sprintf(" \n%s", pterm.Gray(duration)))
+		pterm.Println()
+	}
 }
