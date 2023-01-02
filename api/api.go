@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"markov-generator/global"
 	"markov-generator/handlers"
 	"markov-generator/platform"
 	"markov-generator/platform/twitch"
+	"markov-generator/print"
 	"markov-generator/stats"
 	"net/http"
 	_ "net/http/pprof"
@@ -23,20 +23,23 @@ var (
 
 func HandleRequests() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", homePage)
-	mux.HandleFunc("/tracked-channels", trackedChannels)
-	mux.HandleFunc("/live-channels", liveChannels)
-	mux.HandleFunc("/tracked-emotes", trackedEmotes)
+	mux.HandleFunc("/", apiHomePage)
+
+	mux.HandleFunc("/data", websiteHomePage)
+	mux.HandleFunc("/emotes", emotes)
+
 	mux.HandleFunc("/get-sentence", getSentence)
+
 	mux.HandleFunc("/server-stats", serverStats)
 
 	//handler := cors.AllowAll().Handler(mux)
 	http.ListenAndServe(":10000", mux)
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
+func apiHomePage(w http.ResponseWriter, r *http.Request) {
+	print.Info("Hit API Home Page")
+
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("Hit homePage Endpoint")
 
 	if limitEndpoint(5, "homePage") {
 		welcome := struct {
@@ -73,67 +76,55 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func serverStats(w http.ResponseWriter, r *http.Request) {
+func websiteHomePage(w http.ResponseWriter, r *http.Request) {
+	print.Info("Hit Website Home Page")
+	websiteHits++
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("Hit getServerStats Endpoint")
 
-	if limitEndpoint(1, "serverStats") {
-		access := r.URL.Query().Get("access")
-
-		if access != "security-omegalul" {
-			err := struct {
-				Error string
-			}{}
-			err.Error = "Incorrect security code"
-			json.NewEncoder(w).Encode(err)
-			return
-		}
-
-		s := stats.GetStats()
-
-		s.WebsiteHits = websiteHits
-		s.SentenceHits = sentenceHits
-
-		json.NewEncoder(w).Encode(s)
-	} else {
-		err := struct {
-			Error string
-		}{}
-		err.Error = "Endpoint Limiter: Try again in 1 second"
-		json.NewEncoder(w).Encode(err)
-	}
-}
-
-func trackedChannels(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("Hit trackedChannels Endpoint")
-
-	if limitEndpoint(5, "trackedChannels") {
-		var channels []twitch.Data
-		chains := markov.CurrentChains()
-		for _, d := range twitch.Broadcasters {
-			for _, chain := range chains {
-				if d.Login == chain {
-					channels = append(channels, d)
-				}
-			}
-		}
-		json.NewEncoder(w).Encode(channels)
-	} else {
+	if !limitEndpoint(5, "website home page") {
 		err := struct {
 			Error string
 		}{}
 		err.Error = "Endpoint Limiter: Try again in 5 seconds"
 		json.NewEncoder(w).Encode(err)
 	}
+
+	var data DataSend
+
+	// Channels Used
+	chains := markov.CurrentWorkers()
+	for _, d := range twitch.Broadcasters {
+		for _, chain := range chains {
+			if d.Login == chain {
+				data.ChannelsUsed = append(data.ChannelsUsed, d)
+			}
+		}
+	}
+
+	// Channels Live
+	for channel, status := range twitch.IsLive {
+		e := struct {
+			Name string
+			Live bool
+		}{}
+		e.Name = channel
+		e.Live = status
+		data.ChannelsLive = append(data.ChannelsLive, e)
+	}
+
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func trackedEmotes(w http.ResponseWriter, r *http.Request) {
+func emotes(w http.ResponseWriter, r *http.Request) {
+	print.Info("Hit Emotes Endpoint")
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("Hit trackedEmotes Endpoint")
 
 	if limitEndpoint(5, "trackedEmotes") {
 		allEmotes := struct {
@@ -151,41 +142,12 @@ func trackedEmotes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func liveChannels(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("Hit liveChannels Endpoint")
-	websiteHits += 1
-
-	if limitEndpoint(5, "liveChannels") {
-		var channelsLive []struct {
-			Name string
-			Live bool
-		}
-		for channel, status := range twitch.IsLive {
-			e := struct {
-				Name string
-				Live bool
-			}{}
-			e.Name = channel
-			e.Live = status
-			channelsLive = append(channelsLive, e)
-		}
-		json.NewEncoder(w).Encode(channelsLive)
-	} else {
-		err := struct {
-			Error string
-		}{}
-		err.Error = "Endpoint Limiter: Try again in 5 seconds"
-		json.NewEncoder(w).Encode(err)
-	}
-}
-
 func getSentence(w http.ResponseWriter, r *http.Request) {
+	print.Info("Hit Sentence Endpoint")
+	sentenceHits++
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("Hit getSentence Endpoint")
-	sentenceHits += 1
 
 	channel := strings.ToLower(r.URL.Query().Get("channel"))
 	//method := r.URL.Query().Get("method")
@@ -223,47 +185,35 @@ reply:
 	return
 }
 
-// func getTwitchBroadcasterInfo(w http.ResponseWriter, r *http.Request) {
-// 	log.Println("Hit getTwitchBroadcasterInfo Endpoint")
-// 	w.Header().Set("Content-Type", "application/json")
-// 	channel := strings.ToLower(r.URL.Query().Get("channel"))
+func serverStats(w http.ResponseWriter, r *http.Request) {
+	print.Info("Hit Stats Endpoint")
 
-// 	response := struct {
-// 		ID              string `json:"id"`
-// 		Login           string `json:"login"`
-// 		DisplayName     string `json:"display_name"`
-// 		Type            string `json:"type"`
-// 		BroadcasterType string `json:"broadcaster_type"`
-// 		Description     string `json:"description"`
-// 		ProfileImageUrl string `json:"profile_image_url"`
-// 		OfflineImageUrl string `json:"offline_image_url"`
-// 		ViewCount       int    `json:"view_count"`
-// 		Email           string `json:"email"`
-// 		CreatedAt       string `json:"created_at"`
-// 		Error           string `json:"error"`
-// 	}{}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-// 	if channel == "" {
-// 		response.Error = "Channel is blank! Append ?channel=[channelname] to the url."
-// 	}
+	if limitEndpoint(1, "serverStats") {
+		access := r.URL.Query().Get("access")
 
-// 	d, err := twitch.GetBroadcasterInfo(channel)
-// 	if err != nil {
-// 		response.Error = "Something went wrong... Is this a real user? Are they banned?"
-// 	} else {
-// 		response.ID = d.ID
-// 		response.Login = d.Login
-// 		response.DisplayName = d.DisplayName
-// 		response.Type = d.Type
-// 		response.BroadcasterType = d.BroadcasterType
-// 		response.Description = d.Description
-// 		response.ProfileImageUrl = d.ProfileImageUrl
-// 		response.OfflineImageUrl = d.OfflineImageUrl
-// 		response.ViewCount = d.ViewCount
-// 		response.Email = d.Email
-// 		response.CreatedAt = d.CreatedAt
-// 		response.Error = ""
-// 	}
+		if access != "security-omegalul" {
+			err := struct {
+				Error string
+			}{}
+			err.Error = "Incorrect security code"
+			json.NewEncoder(w).Encode(err)
+			return
+		}
 
-// 	json.NewEncoder(w).Encode(response)
-// }
+		s := stats.GetStats()
+
+		s.WebsiteHits = websiteHits
+		s.SentenceHits = sentenceHits
+
+		json.NewEncoder(w).Encode(s)
+	} else {
+		err := struct {
+			Error string
+		}{}
+		err.Error = "Endpoint Limiter: Try again in 1 second"
+		json.NewEncoder(w).Encode(err)
+	}
+}

@@ -33,6 +33,14 @@ type Statistics struct {
 	Workers int
 
 	PeakChainIntake PeakIntakeStruct
+
+	Durations []report
+}
+
+type report struct {
+	ProcessName string
+	ChainName   string
+	Duration    time.Duration
 }
 
 func updateStats() {
@@ -44,7 +52,7 @@ func updateStats() {
 	stats.InputCountLimit = writeInputLimit
 	stats.TimeUntilWrite = stats.NextWriteTime.Sub(time.Now())
 
-	stats.Workers = len(CurrentChains())
+	stats.Workers = len(CurrentWorkers())
 }
 
 func Stats() (statistics Statistics) {
@@ -99,4 +107,19 @@ func loadStats() {
 	stats.SessionStartTime = time.Now()
 	stats.SessionInputs = 0
 	stats.SessionOutputs = 0
+}
+
+func track(process string, chain string) (string, string, time.Time) {
+	return process, chain, time.Now()
+}
+
+func duration(process string, chain string, start time.Time) {
+	duration := time.Since(start).Round(1 * time.Second)
+	debugLog(process + ": " + duration.String())
+
+	stats.Durations = append(stats.Durations, report{ProcessName: process, ChainName: chain, Duration: duration})
+}
+
+func ReportDurations() []report {
+	return stats.Durations
 }

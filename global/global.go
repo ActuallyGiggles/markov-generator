@@ -29,12 +29,14 @@ var (
 	EmotesMx                sync.Mutex
 
 	// Discord variables
-	DiscordToken        string
-	DiscordGuildID      string
-	DiscordOwnerID      string
-	DiscordBotID        string
-	DiscordModChannelID string
-	DiscordTweetEmote   string
+	DiscordToken               string
+	DiscordGuildID             string
+	DiscordOwnerID             string
+	DiscordBotID               string
+	DiscordModChannelID        string
+	DiscordTweetEmote          string
+	DiscordAllChannelID        string
+	DiscordQuarantineChannelID string
 
 	// Twitter variables
 	TwitterAPIKey            string
@@ -45,11 +47,10 @@ var (
 	TwitterClientSecret      string
 	TwitterBearerToken       string
 
-	Directives    []Directive
-	Resources     []Resource
-	TotalChannels = make(map[string]string)
+	Directives []Directive
 
 	BannedUsers []string
+	RegexList   []string
 	Regex       *regexp.Regexp
 )
 
@@ -75,6 +76,10 @@ func Start() {
 	// Twitter
 	TwitterAccessToken = os.Getenv("TWITTER_ACCESS_TOKEN")
 	TwitterAccessTokenSecret = os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
+
+	LoadChannels()
+	LoadRegex()
+	LoadBannedUsers()
 
 	// LoadDirective()
 	// LoadStatisticsJson()

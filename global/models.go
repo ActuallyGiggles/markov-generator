@@ -6,26 +6,27 @@ type DiscordChannelInfo struct {
 }
 
 type Directive struct {
-	Platform         string            `json:"platform"`
-	ChannelName      string            `json:"channel_name"`
-	ChannelID        string            `json:"channel_id"`
-	DiscordChannelID string            `json:"discord_channel_id"`
-	Settings         DirectiveSettings `json:"settings"`
+	Platform         string
+	ChannelName      string
+	ChannelID        string
+	DiscordChannelID string
+	Settings         DirectiveSettings
 }
 
 type DirectiveSettings struct {
-	Connected          bool `json:"connected"`
-	IsOnlineEnabled    bool `json:"is_online_enabled"`
-	IsOfflineEnabled   bool `json:"is_offline_enabled"`
-	AreCommandsEnabled bool `json:"are_commands_enabled"`
-	IsOptedIn          bool `json:"is_opted_in"`
+	Connected           bool
+	IsOnlineEnabled     bool
+	IsOfflineEnabled    bool
+	AreCommandsEnabled  bool
+	WhichChannelsToUse  string
+	CustomChannelsToUse []string
 }
 
 type Resource struct {
-	DiscordChannelName string `json:"discord_channel_name"`
-	DiscordChannelID   string `json:"discord_channel_id"`
-	DisplayMessageID   string `json:"display_message_id"`
-	Content            string `json:"display_message_content"`
+	DiscordChannelName string
+	DiscordChannelID   string
+	DisplayMessageID   string
+	Content            string
 }
 
 type Emote struct {

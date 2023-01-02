@@ -1,8 +1,7 @@
 package main
 
 import (
-	"io"
-	"log"
+	"context"
 	"markov-generator/api"
 	"markov-generator/global"
 	"markov-generator/handlers"
@@ -10,11 +9,12 @@ import (
 	"markov-generator/platform/discord"
 	"markov-generator/platform/twitch"
 	"markov-generator/platform/twitter"
+	"markov-generator/print"
 	"markov-generator/stats"
+	"time"
 
 	"sync"
 
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -27,41 +27,33 @@ func main() {
 	// Profiling
 	defer profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook).Stop()
 
-	// Logging
-	file, err := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	wrt := io.MultiWriter(os.Stdout, file)
-	log.SetOutput(wrt)
-
 	// Keep open
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer cancel()
 
 	Start()
 
-	<-sc
-	stats.Log("Stopping...")
+	go print.TerminalInput(cancel)
+
+	<-ctx.Done()
+	print.Page("Exited")
 }
 
 func Start() {
-	stats.Log("Initializing")
+	print.Page("Started")
 
 	c := make(chan platform.Message)
 
 	global.Start()
-	stats.Log("Global started")
 
 	go twitter.Start()
-	stats.Log("Twitter started")
+	print.Success("Twitter")
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go discord.Start(c, &wg)
-	stats.Log("Discord started")
 	wg.Wait()
+	print.Success("Discord")
 
 	i := markov.StartInstructions{
 		WriteMode:     "interval",
@@ -69,27 +61,26 @@ func Start() {
 		IntervalUnit:  "minutes",
 		// WriteMode:  "counter",
 		// WriteLimit: 10,
-		StartKey: "b5G(n1$I!4g",
-		EndKey:   "e1$D(n7",
-		Debug:    false,
+		StartKey:  "b5G(n1$I!4g",
+		EndKey:    "e1$D(n7",
+		Debug:     false,
+		ShouldZip: true,
 	}
 	markov.Start(i)
-	stats.Log("Markov started")
+	print.Success("Markov")
 
 	go handlers.MsgHandler(c)
-	stats.Log("Handler started")
 
-	stats.Log("Gathering emotes")
 	twitch.GatherEmotes()
-	stats.Log("Gathered emotes")
+	print.Success("Emotes")
 
 	go api.HandleRequests()
-	stats.Log("API started")
 
 	go twitch.Start(c)
-	stats.Log("Twitch Started")
+	print.Success("Twitch")
 
 	stats.Start()
 
-	stats.Log("Initialization complete")
+	print.Page("Twitch Message Generator")
+	print.Started("Program Started at " + time.Now().Format(time.RFC822))
 }

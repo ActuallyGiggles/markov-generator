@@ -42,7 +42,8 @@ recurse:
 			return
 		}
 	} else {
-		if strings.Contains(err.Error(), "not found in directory") {
+		if strings.Contains(err.Error(), "not found in directory") ||
+			strings.Contains(err.Error(), "Currently zipping") {
 			return
 		}
 	}
@@ -60,7 +61,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 	connected := directive.Settings.Connected
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
-	random := directive.Settings.IsOptedIn
+	channelsToUse := directive.Settings.WhichChannelsToUse
 
 	twitch.IsLiveMx.Lock()
 	live := twitch.IsLive[directive.ChannelName]
@@ -80,16 +81,31 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 		timesRecursed := 0
 
 	recurse:
-		if random || !connected {
-			chainToUse = GetRandomChannel(directive.ChannelName)
+		switch channelsToUse {
+		default:
+			chainToUse = GetRandomChannel("all", directive.ChannelName)
+		case "self":
+			if !connected {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			} else {
+				chainToUse = directive.ChannelName
+			}
+		case "all", "except self":
+			chainToUse = GetRandomChannel(channelsToUse, directive.ChannelName)
+		case "custom":
+			if len(directive.Settings.CustomChannelsToUse) > 0 {
+				chainToUse = global.PickRandomFromSlice(directive.Settings.CustomChannelsToUse)
+			} else {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			}
 		}
 
 		method := global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
 		target := removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
 
 		oi := markov.OutputInstructions{
-			Method: method,
 			Chain:  chainToUse,
+			Method: method,
 			Target: target,
 		}
 		output, err := markov.Out(oi)
@@ -100,6 +116,7 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 			// Recurse if expected error
 			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
 				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(err.Error(), "Currently zipping") ||
 				strings.Contains(output, "@") {
 				if timesRecursed < recursionLimit {
 					timesRecursed++
@@ -108,14 +125,13 @@ func createImmitationSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
+				stats.Log("Could not create immitation sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {
 					timesRecursed++
 					goto recurse
 				}
 			}
-
-			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
 
 		return
@@ -128,7 +144,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 	onlineEnabled := directive.Settings.IsOnlineEnabled
 	offlineEnabled := directive.Settings.IsOfflineEnabled
 	commandsEnabled := directive.Settings.AreCommandsEnabled
-	random := directive.Settings.IsOptedIn
+	channelsToUse := directive.Settings.WhichChannelsToUse
 
 	twitch.IsLiveMx.Lock()
 	live := twitch.IsLive[directive.ChannelName]
@@ -140,20 +156,40 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 		}
 
 		chainToUse := directive.ChannelName
-		recursionLimit := len(markov.CurrentChains())
+		recursionLimit := len(markov.CurrentWorkers())
 		timesRecursed := 0
 
 	recurse:
-		if random || !connected {
-			chainToUse = GetRandomChannel(directive.ChannelName)
+		switch channelsToUse {
+		default:
+			chainToUse = GetRandomChannel("all", directive.ChannelName)
+		case "self":
+			if !connected {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			} else {
+				chainToUse = directive.ChannelName
+			}
+		case "all", "except self":
+			chainToUse = GetRandomChannel(channelsToUse, directive.ChannelName)
+		case "custom":
+			if len(directive.Settings.CustomChannelsToUse) > 0 {
+				chainToUse = global.PickRandomFromSlice(directive.Settings.CustomChannelsToUse)
+			} else {
+				chainToUse = GetRandomChannel("all", directive.ChannelName)
+			}
 		}
 
 		var method string
 		var target string
 
-		if q := isQuestion(msg.Content); q {
+		noMentionMsgContent := strings.Join(strings.Split(msg.Content, " ")[1:], " ")
+		questionType := questionType(noMentionMsgContent)
+		if questionType == "yes no question" {
 			method = "TargetedBeginning"
-			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely not", "absolutely", "who knows"})
+			target = global.PickRandomFromSlice([]string{"yes", "no", "maybe", "absolutely", "absolutely", "who knows"})
+		} else if questionType == "explanation question" {
+			method = "TargetedBeginning"
+			target = global.PickRandomFromSlice([]string{"because", "idk", "idc"})
 		} else {
 			method = global.PickRandomFromSlice([]string{"TargetedBeginning", "TargetedMiddle", "TargetedEnding"})
 			target = removeDeterminers(strings.ReplaceAll(msg.Content, ".", ""))
@@ -175,6 +211,7 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			// Recurse if expected error
 			if strings.Contains(err.Error(), "The system cannot find the file specified.") ||
 				strings.Contains(err.Error(), "does not contain parents that match") ||
+				strings.Contains(err.Error(), "Currently zipping") ||
 				strings.Contains(output, "@") {
 				if timesRecursed < recursionLimit {
 					timesRecursed++
@@ -183,14 +220,13 @@ func createMentioningSentence(msg platform.Message, directive global.Directive) 
 			} else {
 				// Recurse if unique error
 				stats.Log(err.Error())
+				stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 				discord.Say("error-tracking", err.Error())
 				if timesRecursed < recursionLimit {
 					timesRecursed++
 					goto recurse
 				}
 			}
-
-			stats.Log("Could not create mentioning sentence\n\t" + fmt.Sprintf("Trigger Message: %s", msg.Content))
 		}
 
 		return

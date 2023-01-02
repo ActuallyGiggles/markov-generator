@@ -19,10 +19,10 @@ func In(chainName string, content string) {
 	}
 
 	w.ChainMx.Lock()
-	debugLog("Input Locked")
+	//debugLog("Input Locked")
 	w.addInput(content)
 	w.ChainMx.Unlock()
-	debugLog("Input Unlocked")
+	//debugLog("Input Unlocked")
 
 	writeCounter()
 }

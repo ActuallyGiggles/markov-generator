@@ -6,9 +6,19 @@ import (
 	"strings"
 )
 
+var (
+	dialogueOngoing bool
+	dialogueChannel chan Dialogue
+)
+
+type Dialogue struct {
+	Arguments []string
+	MessageID string
+}
+
 // discordCommands receives commands from an admin and returns a response.
 func discordCommands(m platform.Message) {
-	if m.AuthorID != global.DiscordOwnerID || !strings.HasPrefix(m.Content, global.Prefix) || m.AuthorID == global.DiscordBotID {
+	if m.AuthorID != global.DiscordOwnerID {
 		return
 	}
 
@@ -16,27 +26,40 @@ func discordCommands(m platform.Message) {
 	messageSlice := strings.Split(message, " ")
 	command, args := messageSlice[0], messageSlice[1:]
 
-	switch command {
+	if dialogueOngoing {
+		dialogueChannel <- Dialogue{Arguments: messageSlice, MessageID: m.MessageID}
+		return
+	}
 
+	if !strings.HasPrefix(m.Content, global.Prefix) {
+		return
+	}
+
+	switch command {
 	// Directives settings
-	case "addchannel", "ac":
-		addDirective(m.ChannelID, m.MessageID, args)
-	case "updatechannel", "uc":
-		updateDirective(m.ChannelID, m.MessageID, args)
-	case "connectchannel", "cc":
-		connectionOfDirective("connect", m.ChannelID, m.MessageID, args)
-	case "disconnectchannel", "dc":
-		connectionOfDirective("disconnect", m.ChannelID, m.MessageID, args)
+	case "addchannel":
+		if len(args) == 2 {
+			addDirectiveSimple(m.ChannelID, m.MessageID, args)
+		} else {
+			addDirectiveAdvanced(m.ChannelID, m.MessageID)
+		}
+	case "updatechannel":
+		updateDirective(m.ChannelID, m.MessageID)
 
 	// Resources settings
-	case "addregex", "ar":
-		UpdateResourceAndChannel("regex", "add", m.ChannelID, m.MessageID, args)
-	case "removeregex", "rr":
-		UpdateResourceAndChannel("regex", "remove", m.ChannelID, m.MessageID, args)
-	case "addbanneduser", "abu":
-		UpdateResourceAndChannel("banned-users", "add", m.ChannelID, m.MessageID, args)
-	case "removebanneduser", "rbu":
-		UpdateResourceAndChannel("banned-users", "remove", m.ChannelID, m.MessageID, args)
+	case "seeregex":
+		SendRegex(m.ChannelID, m.MessageID)
+	case "addregex":
+		AddRegex(m.ChannelID, m.MessageID, args)
+	case "removeregex":
+		RemoveRegex(m.ChannelID, m.MessageID, args)
+
+	case "seebannedusers":
+		SendBannedUsers(m.ChannelID, m.MessageID)
+	case "addbanneduser":
+		AddBannedUser(m.ChannelID, m.MessageID, args)
+	case "removebanneduser":
+		RemoveBannedUser(m.ChannelID, m.MessageID, args)
 	}
 
 	return

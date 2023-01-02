@@ -2,18 +2,24 @@ package twitch
 
 import (
 	"markov-generator/global"
+	"markov-generator/print"
 	"sync"
 	"time"
+
+	"github.com/pterm/pterm"
 )
 
 var (
 	IsLive   = make(map[string]bool)
 	IsLiveMx sync.Mutex
+	pb       *pterm.ProgressbarPrinter
 )
 
 func GatherEmotes() {
-	GetLiveStatuses()
+	pb = print.ProgressBar("Collecting Twitch API information...", 4+len(global.Directives)*6)
+	GetLiveStatuses(true)
 	GetEmoteController(true, global.Directive{})
+	pb.Stop()
 
 	go updateLiveStatuses()
 	go refreshEmotes()
@@ -21,7 +27,7 @@ func GatherEmotes() {
 
 func updateLiveStatuses() {
 	for range time.Tick(2 * time.Minute) {
-		GetLiveStatuses()
+		GetLiveStatuses(false)
 	}
 }
 

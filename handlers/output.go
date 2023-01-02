@@ -11,7 +11,7 @@ import (
 
 func outputTicker() {
 	for range time.Tick(5 * time.Minute) {
-		chains := markov.CurrentChains()
+		chains := markov.CurrentWorkers()
 
 		for _, chain := range chains {
 			if chain == "actuallygiggles" {

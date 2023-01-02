@@ -1,7 +1,6 @@
 package twitch
 
 import (
-	"log"
 	"markov-generator/global"
 	"markov-generator/stats"
 	"sync"
@@ -27,20 +26,44 @@ func GetEmoteController(isInit bool, channel global.Directive) (ok bool) {
 	if channel.ChannelName == "" {
 		for _, directive := range global.Directives {
 			routineBroadcastersUpdate(directive)
+			if isInit {
+				pb.UpdateTitle("Getting broadcasters info...")
+				pb.Increment()
+			}
 		}
 
 		if isInit {
+			pb.UpdateTitle("Getting global emotes")
 			getTwitchGlobalEmotes()
+			pb.Increment()
 			get7tvGlobalEmotes()
+			pb.Increment()
 			getBttvGlobalEmotes()
+			pb.Increment()
 			getFfzGlobalEmotes()
+			pb.Increment()
 		}
 
 		for _, c := range Broadcasters {
+			if isInit {
+				pb.UpdateTitle("Getting channel emotes: " + c.Login + "...")
+			}
 			getTwitchChannelEmotes(c)
+			if isInit {
+				pb.Increment()
+			}
 			get7tvChannelEmotes(c)
+			if isInit {
+				pb.Increment()
+			}
 			getBttvChannelEmotes(c)
+			if isInit {
+				pb.Increment()
+			}
 			getFfzChannelEmotes(c)
+			if isInit {
+				pb.Increment()
+			}
 		}
 
 		transferEmotes(isInit)
@@ -112,24 +135,24 @@ func transferGlobalEmotes() {
 	global.GlobalEmotes = nil
 	global.GlobalEmotes = append(global.GlobalEmotes, globalEmotesToUpdate...)
 	globalEmotesToUpdate = nil
-	log.Printf("[Updated %d Global emotes]", len(global.GlobalEmotes))
+	// fmt.Printf("%d Global emotes\n", len(global.GlobalEmotes))
 }
 
 func transferTwitchChannelEmotes() {
 	global.TwitchChannelEmotes = nil
 	global.TwitchChannelEmotes = append(global.TwitchChannelEmotes, twitchChannelEmotesToUpdate...)
 	twitchChannelEmotesToUpdate = nil
-	log.Printf("[Updated %d Twitch Channel emotes]", len(global.TwitchChannelEmotes))
+	// fmt.Printf("%d Twitch Channel emotes\n", len(global.TwitchChannelEmotes))
 }
 
 func transferThirdPartyEmotes() {
 	global.ThirdPartyChannelEmotes = nil
 	global.ThirdPartyChannelEmotes = append(global.ThirdPartyChannelEmotes, thirdPartyChannelEmotesToUpdate...)
 	thirdPartyChannelEmotesToUpdate = nil
-	log.Printf("[Updated %d Third Party emotes]", func() (total int) {
-		for _, c := range global.ThirdPartyChannelEmotes {
-			total += len(c.Emotes)
-		}
-		return
-	}())
+	// fmt.Printf("%d Third Party emotes\n", func() (total int) {
+	// 	for _, c := range global.ThirdPartyChannelEmotes {
+	// 		total += len(c.Emotes)
+	// 	}
+	// 	return
+	// }())
 }

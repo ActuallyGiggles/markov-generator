@@ -30,30 +30,6 @@ startOver:
 			Content:     message.Message,
 		}
 
-		// var shortB string
-		// var shortA string
-		// var shortC string
-		// totalM++
-
-		// if len(m.ChannelName) > 10 {
-		// 	shortB = m.ChannelName[:10] + "..."
-		// } else {
-		// 	shortB = m.ChannelName
-		// }
-
-		// if len(m.AuthorName) > 10 {
-		// 	shortA = m.AuthorName[:10] + "..."
-		// } else {
-		// 	shortA = m.AuthorName
-		// }
-
-		// if len(m.Content) > 100 {
-		// 	shortC = m.Content[:100] + "..."
-		// } else {
-		// 	shortC = m.Content
-		// }
-
-		// fmt.Printf("%8d %-13s | %-13s | %q\n", totalM, shortB, shortA, shortC)
 		in <- m
 	})
 

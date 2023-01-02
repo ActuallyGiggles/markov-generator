@@ -68,16 +68,8 @@ func PrettyPrint(v interface{}) {
 	}
 }
 
-func track(chain string) (string, time.Time) {
-	return chain, time.Now()
-}
-
-func duration(chain string, start time.Time) {
-	debugLog(chain + ": " + fmt.Sprint(time.Since(start)))
-}
-
-// CurrentChains returns the names of all chains that have been made.
-func CurrentChains() []string {
+// CurrentWorkers returns the names of all workers that have been made.
+func CurrentWorkers() []string {
 	workerMapMx.Lock()
 	var s []string
 	for chain := range workerMap {

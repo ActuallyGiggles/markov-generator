@@ -4,29 +4,13 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"markov-generator/stats"
 	"math/big"
+	"os"
 	"regexp"
 	"strings"
 )
-
-func UpdateResourceLists() {
-	for i := 0; i < len(Resources); i++ {
-		if Resources[i].DiscordChannelName == "banned-users" {
-			BannedUsers = strings.Split(Resources[i].Content, " ")
-			for j, username := range BannedUsers {
-				if username == "" || username == " " {
-					BannedUsers = FastRemove(BannedUsers, j)
-				}
-			}
-		}
-		if Resources[i].DiscordChannelName == "regex" {
-			r := strings.TrimSpace(Resources[i].Content)
-			r = strings.ReplaceAll(r, " ", "|")
-			Regex = regexp.MustCompile(r)
-		}
-	}
-}
 
 // FastRemove removes an index from a slice of strings without maintaining order
 func FastRemove(s []string, i int) []string {
@@ -70,4 +54,107 @@ func RecoverFullName(functionName string) {
 	if r := recover(); r != nil {
 		stats.Log("recovered '" + functionName)
 	}
+}
+
+func LoadChannels() {
+	jsonFile, _ := os.Open("./global/channels.json")
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(byteValue, &Directives)
+}
+
+func FastRemoveDirective(s []Directive, i int) []Directive {
+	s[i] = s[len(s)-1] // Copy last element to index i
+	s = s[:len(s)-1]   // Truncate slice
+	return s
+}
+
+func UpdateChannels(mode string, channel Directive) error {
+	switch mode {
+	case "update":
+		for i, directive := range Directives {
+			if directive.ChannelName == channel.ChannelName {
+				Directives = FastRemoveDirective(Directives, i)
+				break
+			}
+		}
+
+		Directives = append(Directives, channel)
+	case "add":
+		Directives = append(Directives, channel)
+	}
+
+	return SaveChannels()
+}
+
+func SaveChannels() error {
+	file, err := json.MarshalIndent(Directives, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("./global/channels.json", file, 0644)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func LoadRegex() {
+	jsonFile, err := os.Open("./global/regex.json")
+	if err != nil {
+		panic(err)
+	}
+	defer jsonFile.Close()
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		panic(err)
+	}
+	json.Unmarshal(byteValue, &RegexList)
+
+	r := strings.Join(RegexList, "|")
+	Regex = regexp.MustCompile(r)
+}
+
+func UpdateRegex() error {
+	r := strings.Join(RegexList, "|")
+	Regex = regexp.MustCompile(r)
+
+	return SaveRegex()
+}
+
+func SaveRegex() error {
+	file, err := json.MarshalIndent(RegexList, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("./global/regex.json", file, 0644)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func LoadBannedUsers() {
+	jsonFile, err := os.Open("./global/banned-users.json")
+	if err != nil {
+		panic(err)
+	}
+	defer jsonFile.Close()
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		panic(err)
+	}
+	json.Unmarshal(byteValue, &BannedUsers)
+}
+
+func SaveBannedUsers() error {
+	file, err := json.MarshalIndent(BannedUsers, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("./global/banned-users.json", file, 0644)
+	if err != nil {
+		return err
+	}
+	return err
 }

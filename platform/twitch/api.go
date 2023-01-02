@@ -407,11 +407,15 @@ func GetLiveStatus(channelName string) (live bool) {
 	}
 }
 
-func GetLiveStatuses() {
+func GetLiveStatuses(isInit bool) {
 	IsLiveMx.Lock()
 	defer IsLiveMx.Unlock()
 	for _, channel := range global.Directives {
 		r := GetLiveStatus(channel.ChannelName)
 		IsLive[channel.ChannelName] = r
+		if isInit {
+			pb.UpdateTitle("Getting live statuses...")
+			pb.Increment()
+		}
 	}
 }
