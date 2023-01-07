@@ -106,6 +106,7 @@ func loadStats() {
 	stats.SessionStartTime = time.Now()
 	stats.SessionInputs = 0
 	stats.SessionOutputs = 0
+	stats.Durations = make(map[string]report)
 }
 
 func track(process string, chain string) (string, string, time.Time) {
