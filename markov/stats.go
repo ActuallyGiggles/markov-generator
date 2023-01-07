@@ -34,13 +34,12 @@ type Statistics struct {
 
 	PeakChainIntake PeakIntakeStruct
 
-	Durations []report
+	Durations map[string]report
 }
 
 type report struct {
-	ProcessName string
-	ChainName   string
-	Duration    time.Duration
+	ChainName string
+	Duration  time.Duration
 }
 
 func updateStats() {
@@ -117,9 +116,9 @@ func duration(process string, chain string, start time.Time) {
 	duration := time.Since(start).Round(1 * time.Second)
 	debugLog(process + ": " + duration.String())
 
-	stats.Durations = append(stats.Durations, report{ProcessName: process, ChainName: chain, Duration: duration})
+	stats.Durations[process] = report{ChainName: chain, Duration: duration}
 }
 
-func ReportDurations() []report {
+func ReportDurations() map[string]report {
 	return stats.Durations
 }

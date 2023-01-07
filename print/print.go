@@ -8,7 +8,6 @@ import (
 	"markov-generator/stats"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/pterm/pterm"
 )
@@ -41,7 +40,6 @@ func Error(message string) {
 
 func Info(message string) {
 	pterm.Info.Println(message)
-	stats.Log(message)
 	fmt.Println()
 }
 
@@ -71,8 +69,8 @@ func TerminalInput(cancel context.CancelFunc) {
 		case "clear":
 			Page("Twitch Message Generator")
 		case "help":
-			t := fmt.Sprintln("[write duration] for average duration of write loop")
-			t += fmt.Sprintln("[zip duration] for average duration of zip process")
+			t := fmt.Sprintln("[write duration] for latest duration of write loop")
+			t += fmt.Sprintln("[zip duration] for latest duration of zip process")
 			t += fmt.Sprintln("[started] for when the program started")
 			t += fmt.Sprintln("[help] for list of commands")
 			t += fmt.Sprintln("[clear] to clear the screen")
@@ -83,38 +81,10 @@ func TerminalInput(cancel context.CancelFunc) {
 			Info(started)
 		case "write duration":
 			reports := markov.ReportDurations()
-
-			var duration time.Duration
-			var durationNumbers int
-
-			for _, report := range reports {
-				if report.ProcessName == "write duration" {
-					duration += report.Duration
-				}
-
-				durationNumbers++
-			}
-
-			a := int(duration.Seconds()) / durationNumbers
-
-			Info("Average duration of writing loop: " + fmt.Sprint(time.Minute*time.Duration(a)))
+			Info("Latest writing loop duration: " + fmt.Sprint(reports["write duration"].Duration))
 		case "zip duration":
 			reports := markov.ReportDurations()
-
-			var duration time.Duration
-			var durationNumbers int
-
-			for _, report := range reports {
-				if report.ProcessName == "zip duration" {
-					duration += report.Duration
-				}
-
-				durationNumbers++
-			}
-
-			a := int(duration.Seconds()) / durationNumbers
-
-			Info("Average duration of zip: " + fmt.Sprint(time.Minute*time.Duration(a)))
+			Info("Latest zip duration: " + fmt.Sprint(reports["zip duration"].Duration))
 		}
 	}
 }
